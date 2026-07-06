@@ -180,6 +180,33 @@
 <div id="app"></div>
 
 <script>
+/* ======================= CONFIGURAÇÃO DE INTEGRAÇÃO ======================= */
+/* Cole aqui a URL do webhook do N8N (nó "Webhook" em modo Production).      */
+/* Enquanto estiver vazia, o cadastro funciona normalmente, mas não é        */
+/* enviado a lugar nenhum além da memória do navegador.                     */
+const N8N_WEBHOOK_URL = 'https://n8n.hubgrupotm.com.br/webhook/plantao-vidas-em-jogo-lead';
+
+function enviarLeadParaN8N(aluno){
+  if(!N8N_WEBHOOK_URL){
+    console.warn('N8N_WEBHOOK_URL não configurada — cadastro não foi enviado externamente.');
+    return;
+  }
+  fetch(N8N_WEBHOOK_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      nome: aluno.nome,
+      telefone: aluno.telefone,
+      email: aluno.email,
+      curso_interesse: aluno.curso,
+      colegio: aluno.colegio,
+      serie: aluno.serie,
+      origem: 'Plantão: Vidas em Jogo',
+      data_cadastro: new Date().toISOString()
+    })
+  }).catch(err => console.error('Falha ao enviar cadastro ao N8N:', err));
+}
+
 /* ======================= BANCO DE DADOS ======================= */
 const MODULOS = [
   {
@@ -656,6 +683,7 @@ function iniciarPlantao(){
     return;
   }
   estado.aluno = {nome, telefone, email, curso, colegio, serie};
+  enviarLeadParaN8N(estado.aluno);
   estado.tela = 'mapa';
   render();
 }
