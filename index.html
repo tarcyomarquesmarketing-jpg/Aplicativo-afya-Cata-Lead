@@ -123,15 +123,17 @@
     position:relative;
   }
   .turno.feito{border-left-color:var(--ok);}
-  .turno.atual{border-left-color:var(--afya-red); background:var(--afya-red-tint);}
-  .turno.bloqueado{opacity:.45;}
+  .turno.disponivel{border-left-color:var(--afya-red);}
   .hora{font-family:var(--mono); font-size:13px; color:var(--muted); font-weight:700;}
-  .turno.atual .hora, .turno.feito .hora{color:var(--ink);}
+  .turno.disponivel .hora, .turno.feito .hora{color:var(--ink);}
   .turno-info .profissao{font-weight:700; font-size:15px; font-family:var(--display);}
   .turno-info .local{font-size:12px; color:var(--muted);}
+  .disciplinas{display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; align-items:center;}
+  .disciplinas-rotulo{font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-right:2px;}
+  .disciplina-tag{font-size:10px; background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 9px; color:var(--muted); font-family:var(--sans);}
+  .disciplina-tag.faculdade{background:var(--afya-red-tint); border-color:var(--afya-red); color:var(--afya-red-dark); font-weight:600;}
   .selo-mini{font-size:22px;}
   .turno-btn{white-space:nowrap;}
-  .turno.atual button:not(.secundario){background:var(--afya-red);}
 
   /* ---------- PRONTUÁRIO / CASO ---------- */
   .prontuario{
@@ -210,7 +212,7 @@ function enviarLeadParaN8N(aluno){
 /* ======================= BANCO DE DADOS ======================= */
 const MODULOS = [
   {
-    id:'nutricao', horario:'07h00 – 08h00', local:'Ambulatório de Nutrição Clínica', profissao:'Nutricionista', icone:'🥗', selo:'Selo do Nutricionista',
+    id:'nutricao', colegio:'Biologia, Química', faculdade:'Bioquímica, Nutrição Clínica', horario:'07h00 – 08h00', local:'Ambulatório de Nutrição Clínica', profissao:'Nutricionista', icone:'🥗', selo:'Selo do Nutricionista',
     caso:{ paciente:'J. S., 16 anos', queixa:'Fadiga extrema, tontura ao levantar e unhas fracas', narrativa:'A triagem aponta um possível quadro carencial. Antes de definir a conduta nutricional, você precisa entender como o corpo desse paciente processa energia e nutrientes.' },
     perguntas:[
       {e:'Qual macronutriente é a principal fonte energética imediata do corpo humano?', alt:['Proteínas','Lipídios','Carboidratos','Vitaminas'], c:2, exp:'Os carboidratos são convertidos em glicose, o principal substrato da respiração celular para gerar ATP rapidamente.'},
@@ -254,7 +256,7 @@ const MODULOS = [
     ]
   },
   {
-    id:'enfermagem', horario:'08h00 – 09h30', local:'Pronto Atendimento', profissao:'Enfermeiro(a)', icone:'💉', selo:'Selo da Enfermagem',
+    id:'enfermagem', colegio:'Biologia', faculdade:'Fisiologia Humana, Saúde Coletiva', horario:'08h00 – 09h30', local:'Pronto Atendimento', profissao:'Enfermeiro(a)', icone:'💉', selo:'Selo da Enfermagem',
     caso:{ paciente:'M. O., 17 anos', queixa:'Falta de ar e mal-estar após um mutirão de vacinação na comunidade', narrativa:'Antes de qualquer conduta, a equipe de enfermagem precisa estabilizar os sinais vitais do paciente e avaliar o cenário de saúde pública ao redor do caso.' },
     perguntas:[
       {e:'A frequência cardíaca normal de um adulto em repouso está na faixa de:', alt:['40–60 bpm','60–100 bpm','100–140 bpm','140–180 bpm'], c:1, exp:'A frequência cardíaca de repouso saudável em adultos varia entre 60 e 100 batimentos por minuto.'},
@@ -298,7 +300,7 @@ const MODULOS = [
     ]
   },
   {
-    id:'biomedicina', horario:'09h30 – 10h30', local:'Laboratório de Análises Clínicas', profissao:'Biomédico(a)', icone:'🧬', selo:'Selo da Biomedicina',
+    id:'biomedicina', colegio:'Biologia, Química', faculdade:'Genética, Microbiologia, Imunologia', horario:'09h30 – 10h30', local:'Laboratório de Análises Clínicas', profissao:'Biomédico(a)', icone:'🧬', selo:'Selo da Biomedicina',
     caso:{ paciente:'Amostra nº 214', queixa:'Suspeita de infecção viral aguda', narrativa:'As amostras de sangue chegaram ao laboratório. Você precisa interpretar exames e técnicas laboratoriais para confirmar — ou descartar — o diagnóstico.' },
     perguntas:[
       {e:'O DNA é composto por quantas bases nitrogenadas diferentes?', alt:['2','3','4','5'], c:2, exp:'As quatro bases são adenina (A), timina (T), citosina (C) e guanina (G).'},
@@ -342,7 +344,7 @@ const MODULOS = [
     ]
   },
   {
-    id:'medicina', horario:'10h30 – 12h00', local:'Enfermaria — Clínica Médica', profissao:'Médico(a)', icone:'🩺', selo:'Selo da Medicina',
+    id:'medicina', colegio:'Biologia, Química', faculdade:'Fisiologia, Endocrinologia', horario:'10h30 – 12h00', local:'Enfermaria — Clínica Médica', profissao:'Médico(a)', icone:'🩺', selo:'Selo da Medicina',
     caso:{ paciente:'R. A., 58 anos', queixa:'Pressão arterial instável e palpitações', narrativa:'Como médico(a) de plantão, você precisa avaliar os sistemas do corpo do paciente para decidir a conduta clínica com segurança.' },
     perguntas:[
       {e:'O sistema nervoso autônomo se divide em:', alt:['Central e periférico','Simpático e parassimpático','Motor e sensitivo','Cerebral e espinhal'], c:1, exp:'O simpático prepara o corpo para ação (ex: acelera o coração); o parassimpático promove relaxamento.'},
@@ -386,7 +388,7 @@ const MODULOS = [
     ]
   },
   {
-    id:'to', horario:'13h00 – 14h00', local:'Setor de Reabilitação', profissao:'Terapeuta Ocupacional', icone:'🦾', selo:'Selo da Terapia Ocupacional',
+    id:'to', colegio:'Biologia, Sociologia', faculdade:'Anatomia, Cinesiologia', horario:'13h00 – 14h00', local:'Setor de Reabilitação', profissao:'Terapeuta Ocupacional', icone:'🦾', selo:'Selo da Terapia Ocupacional',
     caso:{ paciente:'C. F., 16 anos', queixa:'Dificuldade motora para atividades básicas após um acidente', narrativa:'Você avalia a estrutura corporal do paciente e propõe adaptações que devolvam autonomia ao seu dia a dia.' },
     perguntas:[
       {e:'As articulações sinoviais, como o joelho, permitem:', alt:['Nenhum movimento','Movimento amplo, amortecido por líquido sinovial','Apenas rotação','Movimento apenas em bebês'], c:1, exp:'O líquido sinovial reduz o atrito e permite grande amplitude de movimento nessas articulações.'},
@@ -430,7 +432,7 @@ const MODULOS = [
     ]
   },
   {
-    id:'psicologia', horario:'14h00 – 15h00', local:'Consultório de Psicologia', profissao:'Psicólogo(a)', icone:'🧠', selo:'Selo da Psicologia',
+    id:'psicologia', colegio:'Sociologia, Filosofia', faculdade:'Psicologia do Desenvolvimento, Psicologia Social', horario:'14h00 – 15h00', local:'Consultório de Psicologia', profissao:'Psicólogo(a)', icone:'🧠', selo:'Selo da Psicologia',
     caso:{ paciente:'L. B., 17 anos', queixa:'Ansiedade intensa antes das provas e isolamento social', narrativa:'A família trouxe o paciente ao consultório. Você conduz uma escuta cuidadosa para compreender o quadro e orientar os próximos passos.' },
     perguntas:[
       {e:'Segundo a psicologia do desenvolvimento, a adolescência é marcada principalmente por:', alt:['Estabilidade emocional total','Formação de identidade e mudanças biopsicossociais','Ausência de conflitos sociais','Regressão cognitiva'], c:1, exp:'É uma fase de intensa construção da identidade, com mudanças físicas, emocionais e sociais.'},
@@ -486,6 +488,7 @@ let estado = {
   estabilidade:50,
   acertosModulo:0,
   selos:[],
+  modulosConcluidos:[],
   ecgAlerta:'',
 };
 
@@ -690,21 +693,26 @@ function iniciarPlantao(){
 
 function telaMapa(){
   const linhas = MODULOS.map((m, i)=>{
-    let classe = 'bloqueado';
-    if(i < estado.moduloAtual) classe = 'feito';
-    else if(i === estado.moduloAtual) classe = 'atual';
+    const concluido = estado.modulosConcluidos.includes(m.id);
+    const classe = concluido ? 'feito' : 'disponivel';
     const selo = estado.selos.includes(m.id) ? `<span class="selo-mini">${m.icone}</span>` : '';
-    const botao = classe==='atual'
-      ? `<button class="turno-btn" onclick="entrarNoModulo(${i})">Entrar no plantão</button>`
-      : classe==='feito'
-        ? `<button class="turno-btn secundario" onclick="entrarNoModulo(${i})">Revisar plantão ${selo}</button>`
-        : `<button class="turno-btn secundario" disabled>Aguardando turno</button>`;
+    const botao = concluido
+      ? `<button class="turno-btn secundario" onclick="entrarNoModulo(${i})">Revisar plantão ${selo}</button>`
+      : `<button class="turno-btn" onclick="entrarNoModulo(${i})">Entrar no plantão</button>`;
     return `
       <div class="turno ${classe}">
         <div class="hora">${m.horario}</div>
         <div class="turno-info">
           <div class="profissao">${m.icone} ${m.profissao}</div>
           <div class="local">${m.local}</div>
+          <div class="disciplinas">
+            <span class="disciplinas-rotulo">No colégio:</span>
+            ${m.colegio.split(', ').map(d=>`<span class="disciplina-tag">${d}</span>`).join('')}
+          </div>
+          <div class="disciplinas">
+            <span class="disciplinas-rotulo">Na faculdade:</span>
+            ${m.faculdade.split(', ').map(d=>`<span class="disciplina-tag faculdade">${d}</span>`).join('')}
+          </div>
         </div>
         ${botao}
       </div>`;
@@ -714,7 +722,7 @@ function telaMapa(){
     <div class="card">
       <div class="eyebrow">Escala de Plantão · ${estado.aluno.serie}</div>
       <h2>Bem-vindo(a) ao seu turno, ${estado.aluno.nome}</h2>
-      <p class="muted">Hoje você passa por seis especialidades, das 07h às 15h. Cada atendimento exige decisões rápidas — a saúde do paciente depende do seu conhecimento.</p>
+      <p class="muted">Escolha por qual especialidade quer começar. Cada plantão traz um caso, suas disciplinas de estudo e um atendimento com decisões rápidas — a saúde do paciente depende do seu conhecimento.</p>
       <div class="escala">${linhas}</div>
     </div>`;
 }
@@ -797,6 +805,9 @@ function proximaPergunta(){
     if(estado.estabilidade >= 60 && !estado.selos.includes(modulo.id)){
       estado.selos.push(modulo.id);
     }
+    if(!estado.modulosConcluidos.includes(modulo.id)){
+      estado.modulosConcluidos.push(modulo.id);
+    }
     estado.tela = 'resultadoFase';
     render();
   }
@@ -805,7 +816,7 @@ function proximaPergunta(){
 function telaResultadoFase(){
   const modulo = MODULOS[estado.moduloAtual];
   const conquistou = estado.selos.includes(modulo.id);
-  const ehUltimo = estado.moduloAtual === MODULOS.length - 1;
+  const todosConcluidos = estado.modulosConcluidos.length === MODULOS.length;
 
   return `
     <div class="card" style="text-align:center;">
@@ -819,17 +830,16 @@ function telaResultadoFase(){
       </div>
       <div class="row" style="justify-content:center;">
         <button class="ouro" onclick="baixarPDFModulo(${estado.moduloAtual})">Baixar PDF de treino: ${modulo.profissao}</button>
-        <button onclick="avancarDoResultado(${ehUltimo})">${ehUltimo ? 'Ver resultado final do plantão' : 'Voltar à escala'}</button>
+        <button onclick="avancarDoResultado(${todosConcluidos})">${todosConcluidos ? 'Ver resultado final do plantão' : 'Voltar à escala'}</button>
       </div>
     </div>`;
 }
 
 function baixarPDFModulo(i){ gerarPDFModulo(MODULOS[i]); }
 
-function avancarDoResultado(ehUltimo){
-  estado.moduloAtual = Math.min(estado.moduloAtual + 1, MODULOS.length - 1);
+function avancarDoResultado(todosConcluidos){
   estado.estabilidade = 50;
-  estado.tela = ehUltimo ? 'final' : 'mapa';
+  estado.tela = todosConcluidos ? 'final' : 'mapa';
   render();
 }
 
@@ -857,7 +867,7 @@ function telaFinal(){
 }
 
 function recomecar(){
-  estado = {tela:'mapa', aluno:estado.aluno, moduloAtual:0, perguntaAtual:0, respondida:false, score:0, estabilidade:50, acertosModulo:0, selos:[], ecgAlerta:''};
+  estado = {tela:'mapa', aluno:estado.aluno, moduloAtual:0, perguntaAtual:0, respondida:false, score:0, estabilidade:50, acertosModulo:0, selos:[], modulosConcluidos:[], ecgAlerta:''};
   render();
 }
 
