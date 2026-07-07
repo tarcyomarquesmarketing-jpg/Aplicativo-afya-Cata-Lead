@@ -1,877 +1,152 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plantão: Vidas em Jogo — AFYA</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Pacifico&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<style>
-  :root{
-    /* Paleta AFYA real: magenta-vermelho vibrante de campanha, azul de apoio, wordmark script */
-    --afya-red: #E01A55;
-    --afya-red-dark: #B01344;
-    --afya-red-tint: #FDEAF0;
-    --accent-blue: #2E6DE0;
-    --bg: #F7F5F3;
-    --panel: #FFFFFF;
-    --border: #E7E2DE;
-    --ink: #1D1B19;
-    --muted: #7A7570;
-    --ok: #1FA765;
-    --ok-tint: #E7F7EE;
-    --gold: #C98A1F;
-    --gold-tint: #FBF1DD;
-    --display: 'Inter', sans-serif;
-    --headline: 'Anton', sans-serif;
-    --script: 'Pacifico', cursive;
-    --sans: 'Inter', sans-serif;
-    --mono: 'JetBrains Mono', monospace;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--sans);
-    min-height:100vh;
-    -webkit-font-smoothing:antialiased;
-  }
-  #app{max-width:920px;margin:0 auto;padding:0 18px 60px;}
-
-  .marca-afya{font-family:var(--script); font-weight:400; color:var(--afya-red); letter-spacing:0;}
-
-  /* ---------- MONITOR HEADER ---------- */
-  .monitor{
-    position:sticky; top:0; z-index:30;
-    background: #FFFFFF;
-    border-bottom:2px solid var(--afya-red);
-    box-shadow:0 2px 10px rgba(29,27,25,.04);
-    padding:14px 18px;
-    display:flex; align-items:center; gap:18px;
-    margin: 0 -18px 28px;
-  }
-  .crachá{display:flex; flex-direction:column; min-width:150px;}
-  .crachá .marca-mini{font-family:var(--script); font-weight:400; font-size:16px; color:var(--afya-red); text-transform:none;}
-  .crachá .nome{font-family:var(--sans); font-weight:700; font-size:13px; color:var(--ink);}
-  .crachá .funcao{font-size:11px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:1px;}
-  .ecg-wrap{flex:1; height:44px; position:relative; overflow:hidden; border-radius:6px; background:#FBFAF9; border:1px solid var(--border);}
-  .ecg-wrap svg{position:absolute; top:0; left:0; height:100%; width:200%;}
-  .ecg-line{fill:none; stroke:var(--ok); stroke-width:2; filter:drop-shadow(0 0 3px rgba(31,167,101,.4));}
-  .ecg-line.alert{stroke:var(--afya-red); filter:drop-shadow(0 0 5px rgba(230,51,41,.45));}
-  @keyframes scrollECG{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
-  .ecg-wrap svg{animation: scrollECG 2.6s linear infinite;}
-  .vitais{display:flex; gap:16px; align-items:center;}
-  .vitais .stat{text-align:right;}
-  .vitais .stat .val{font-family:var(--mono); font-weight:700; font-size:18px; color:var(--ink);}
-  .vitais .stat .lbl{font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;}
-  .estab-val{color:var(--ok);}
-  .estab-val.baixa{color:var(--afya-red);}
-
-  /* ---------- GENERIC ---------- */
-  .card{
-    background: var(--panel);
-    border:1px solid var(--border);
-    border-radius:14px;
-    padding:28px;
-    margin-bottom:20px;
-    box-shadow:0 1px 3px rgba(29,27,25,.03);
-  }
-  h1,h2,h3{font-family:var(--display); margin:0 0 8px; color:var(--ink); font-weight:700;}
-  .eyebrow{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--afya-red); font-weight:700; margin-bottom:6px;}
-  p{line-height:1.6; color:var(--ink);}
-  .muted{color:var(--muted);}
-  label{display:block; font-size:12px; font-weight:700; color:var(--muted); margin:14px 0 6px; text-transform:uppercase; letter-spacing:.5px;}
-  input[type=text], select{
-    width:100%; padding:12px 14px; border-radius:8px;
-    border:1px solid var(--border); background:#FBFAF9; color:var(--ink);
-    font-family:var(--sans); font-size:15px;
-  }
-  input[type=text]:focus, select:focus{outline:2px solid var(--afya-red); border-color:var(--afya-red);}
-  button{
-    font-family:var(--sans); font-weight:700; font-size:14px;
-    border:none; border-radius:8px; padding:13px 22px; cursor:pointer;
-    background:var(--afya-red); color:#FFFFFF;
-    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
-  }
-  button:hover{transform:translateY(-1px); box-shadow:0 4px 14px rgba(230,51,41,.25); background:var(--afya-red-dark);}
-  button:focus-visible{outline:3px solid var(--gold); outline-offset:2px;}
-  button.secundario{background:transparent; color:var(--ink); border:1px solid var(--border);}
-  button.secundario:hover{background:#FBFAF9; box-shadow:none;}
-  button.ouro{background:var(--gold); color:#2A1B02;}
-  button:disabled{opacity:.4; cursor:not-allowed; transform:none;}
-  .row{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;}
-
-  /* ---------- POSTER (inspirado na peça Open Day) ---------- */
-  .poster-hero{
-    background: linear-gradient(135deg, var(--afya-red) 0%, var(--afya-red-dark) 100%);
-    color:#fff; border-radius:16px; padding:36px 30px; margin-bottom:20px; text-align:center;
-  }
-  .poster-hero .script{font-family:var(--script); font-size:30px; color:#fff; margin-bottom:6px;}
-  .poster-hero h1{font-family:var(--headline); color:#fff; font-size:38px; line-height:1.05; text-transform:uppercase; margin:6px 0 10px; letter-spacing:.5px;}
-  .poster-hero .sub{color:#FCE0EA; font-size:14px; max-width:440px; margin:0 auto; line-height:1.5;}
-  .poster-badges{display:flex; gap:12px; margin-top:22px; flex-wrap:wrap; justify-content:center;}
-  .poster-badge{display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.14); border-radius:30px; padding:7px 16px 7px 7px;}
-  .poster-badge .ic{width:34px; height:34px; border-radius:50%; background:#fff; color:var(--afya-red); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;}
-  .poster-badge .ic.azul{color:var(--accent-blue);}
-  .poster-badge .lb{color:#fff; font-size:12px; font-weight:700; text-align:left; line-height:1.25;}
-  .escala{display:flex; flex-direction:column; gap:0; margin-top:10px;}
-  .turno{
-    display:grid; grid-template-columns:78px 1fr auto; align-items:center; gap:16px;
-    padding:16px 14px; border-left:3px solid var(--border);
-    position:relative;
-  }
-  .turno.feito{border-left-color:var(--ok);}
-  .turno.disponivel{border-left-color:var(--afya-red);}
-  .hora{font-family:var(--mono); font-size:13px; color:var(--muted); font-weight:700;}
-  .turno.disponivel .hora, .turno.feito .hora{color:var(--ink);}
-  .turno-info .profissao{font-weight:700; font-size:15px; font-family:var(--display);}
-  .turno-info .local{font-size:12px; color:var(--muted);}
-  .disciplinas{display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; align-items:center;}
-  .disciplinas-rotulo{font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-right:2px;}
-  .disciplina-tag{font-size:10px; background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 9px; color:var(--muted); font-family:var(--sans);}
-  .disciplina-tag.faculdade{background:var(--afya-red-tint); border-color:var(--afya-red); color:var(--afya-red-dark); font-weight:600;}
-  .selo-mini{font-size:22px;}
-  .turno-btn{white-space:nowrap;}
-
-  /* ---------- PRONTUÁRIO / CASO ---------- */
-  .prontuario{
-    background:#FBFAF9; border:1px dashed var(--border); border-radius:10px;
-    padding:18px; margin:14px 0;
-  }
-  .prontuario .campo{display:flex; gap:8px; font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:4px;}
-  .prontuario .campo b{color:var(--ink);}
-
-  /* ---------- QUESTÃO ---------- */
-  .progresso-q{font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:10px;}
-  .enunciado{font-size:16px; font-weight:700; margin-bottom:16px; font-family:var(--display);}
-  .alternativa{
-    display:block; width:100%; text-align:left;
-    background:#FBFAF9; border:1px solid var(--border); border-radius:9px;
-    padding:13px 16px; margin-bottom:10px; color:var(--ink); font-size:14px;
-    cursor:pointer; font-family:var(--sans); font-weight:500;
-  }
-  .alternativa:hover{border-color:var(--afya-red);}
-  .alternativa.correta{border-color:var(--ok); background:var(--ok-tint);}
-  .alternativa.errada{border-color:var(--afya-red); background:var(--afya-red-tint);}
-  .alternativa[disabled]{cursor:default;}
-  .feedback{margin-top:14px; padding:14px; border-radius:9px; font-size:14px; line-height:1.5;}
-  .feedback.ok{background:var(--ok-tint); border:1px solid var(--ok);}
-  .feedback.no{background:var(--afya-red-tint); border:1px solid var(--afya-red);}
-
-  /* ---------- RESULTADO MODULO / FINAL ---------- */
-  .selo-grande{font-size:56px; text-align:center; margin:10px 0;}
-  .resultado-stats{display:flex; justify-content:center; gap:34px; margin:20px 0;}
-  .resultado-stats .num{font-family:var(--display); font-size:30px; font-weight:800; color:var(--afya-red); text-align:center;}
-  .resultado-stats .lbl{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; text-align:center;}
-  .selos-final{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin:18px 0;}
-  .selo-item{background:#FBFAF9; border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center; width:110px;}
-  .selo-item .ic{font-size:30px;}
-  .selo-item .nm{font-size:11px; color:var(--muted); margin-top:4px;}
-
-  footer.creditos{text-align:center; color:var(--muted); font-size:12px; margin-top:30px;}
-  @media (max-width:640px){
-    .turno{grid-template-columns:60px 1fr; grid-template-areas:"hora info" "btn btn";}
-    .turno .hora{grid-area:hora;} .turno-info{grid-area:info;} .turno-btn{grid-area:btn; margin-top:10px;}
-    .resultado-stats{gap:18px;}
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dharma | Dashboard & Automação</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-<div id="app"></div>
+<body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col justify-between">
 
-<script>
-/* ======================= CONFIGURAÇÃO DE INTEGRAÇÃO ======================= */
-/* Cole aqui a URL do webhook do N8N (nó "Webhook" em modo Production).      */
-/* Enquanto estiver vazia, o cadastro funciona normalmente, mas não é        */
-/* enviado a lugar nenhum além da memória do navegador.                     */
-const N8N_WEBHOOK_URL = 'https://n8n.hubgrupotm.com.br/webhook/plantao-vidas-em-jogo-lead';
-
-function enviarLeadParaN8N(aluno){
-  if(!N8N_WEBHOOK_URL){
-    console.warn('N8N_WEBHOOK_URL não configurada — cadastro não foi enviado externamente.');
-    return;
-  }
-  fetch(N8N_WEBHOOK_URL, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      nome: aluno.nome,
-      telefone: aluno.telefone,
-      email: aluno.email,
-      curso_interesse: aluno.curso,
-      colegio: aluno.colegio,
-      serie: aluno.serie,
-      origem: 'Plantão: Vidas em Jogo',
-      data_cadastro: new Date().toISOString()
-    })
-  }).catch(err => console.error('Falha ao enviar cadastro ao N8N:', err));
-}
-
-/* ======================= BANCO DE DADOS ======================= */
-const MODULOS = [
-  {
-    id:'nutricao', colegio:'Biologia, Química', faculdade:'Bioquímica, Nutrição Clínica', horario:'07h00 – 08h00', local:'Ambulatório de Nutrição Clínica', profissao:'Nutricionista', icone:'🥗', selo:'Selo do Nutricionista',
-    caso:{ paciente:'J. S., 16 anos', queixa:'Fadiga extrema, tontura ao levantar e unhas fracas', narrativa:'A triagem aponta um possível quadro carencial. Antes de definir a conduta nutricional, você precisa entender como o corpo desse paciente processa energia e nutrientes.' },
-    perguntas:[
-      {e:'Qual macronutriente é a principal fonte energética imediata do corpo humano?', alt:['Proteínas','Lipídios','Carboidratos','Vitaminas'], c:2, exp:'Os carboidratos são convertidos em glicose, o principal substrato da respiração celular para gerar ATP rapidamente.'},
-      {e:'A hemoglobina glicada (HbA1c) é usada para monitorar o controle de qual condição?', alt:['Hipertensão','Diabetes','Anemia','Hipotireoidismo'], c:1, exp:'A HbA1c reflete a glicemia média dos últimos 2 a 3 meses, essencial no acompanhamento do diabetes.'},
-      {e:'Durante o jejum prolongado, o fígado converte glicogênio em glicose por um processo chamado:', alt:['Glicogenólise','Glicólise','Gliconeogênese','Lipólise'], c:0, exp:'Glicogenólise é a quebra do glicogênio hepático armazenado para liberar glicose no sangue.'},
-      {e:'A deficiência de vitamina C pode causar qual doença, historicamente associada a navegadores?', alt:['Raquitismo','Escorbuto','Beribéri','Pelagra'], c:1, exp:'O escorbuto era comum entre marinheiros pela falta de frutas frescas; a vitamina C é essencial na síntese de colágeno.'},
-      {e:'O índice glicêmico de um alimento mede:', alt:['A quantidade de calorias','A velocidade com que eleva a glicose no sangue','O teor de fibras','A quantidade de proteína'], c:1, exp:'Alimentos de alto índice glicêmico elevam a glicemia rapidamente — informação crítica para pacientes diabéticos.'},
-      {e:'As enzimas amilase salivar e pancreática atuam principalmente sobre:', alt:['Proteínas','Lipídios','Amido','Ácidos nucleicos'], c:2, exp:'A amilase quebra o amido em moléculas menores, como maltose e glicose.'}
-    ],
-    extra:[
-      {e:'O metabolismo basal representa:', alt:['Energia gasta em exercícios intensos','Energia mínima para as funções vitais em repouso','Energia usada só na digestão','Energia armazenada como gordura'], c:1, exp:'O metabolismo basal é a energia mínima que o corpo consome em repouso absoluto para manter funções vitais, como respiração e batimento cardíaco.'},
-      {e:'A digestão de proteínas se inicia principalmente no:', alt:['Estômago, pela ação da pepsina','Boca, pela amilase','Intestino grosso','Fígado'], c:0, exp:'A pepsina, ativada pelo ácido clorídrico gástrico, inicia a quebra de proteínas em peptídeos menores.'},
-      {e:'A desnutrição proteico-calórica infantil grave é conhecida como:', alt:['Escorbuto','Kwashiorkor','Beribéri','Bócio'], c:1, exp:'O Kwashiorkor é a desnutrição proteica grave, comum em crianças com dieta pobre em proteínas mesmo com ingestão calórica razoável.'},
-      {e:'As fibras alimentares são importantes porque:', alt:['Fornecem grande quantidade de energia','Auxiliam o funcionamento intestinal e o controle glicêmico','Substituem proteínas','São digeridas rapidamente'], c:1, exp:'As fibras não são digeridas, mas estimulam o peristaltismo intestinal e retardam a absorção de glicose.'},
-      {e:'O colesterol LDL é popularmente associado a:', alt:['"Colesterol bom"','"Colesterol ruim", ligado a risco cardiovascular','Uma vitamina','Uma proteína muscular'], c:1, exp:'O LDL transporta colesterol para os tecidos e, em excesso, se deposita nas paredes arteriais, favorecendo aterosclerose.'},
-      {e:'Qual vitamina é sintetizada pela pele por exposição solar e essencial para a absorção de cálcio?', alt:['Vitamina C','Vitamina D','Vitamina K','Vitamina B12'], c:1, exp:'A vitamina D é produzida na pele sob luz UV e ativa a absorção intestinal de cálcio e fósforo.'},
-      {e:'A anemia ferropriva é causada principalmente por:', alt:['Excesso de vitamina C','Deficiência de ferro na dieta','Excesso de proteína','Falta de fibras'], c:1, exp:'Sem ferro suficiente, o corpo não produz hemoglobina adequada, reduzindo o transporte de oxigênio.'},
-      {e:'Os aminoácidos essenciais são aqueles que:', alt:['O corpo produz em grande quantidade','Devem ser obtidos pela dieta, pois o corpo não os sintetiza','Só existem em vegetais','Não têm função no organismo'], c:1, exp:'Aminoácidos essenciais não são sintetizados pelo organismo humano e precisam vir da alimentação.'},
-      {e:'Gorduras trans, presentes em alimentos ultraprocessados, estão associadas a:', alt:['Redução do colesterol','Aumento do risco cardiovascular','Melhora da digestão','Fortalecimento ósseo'], c:1, exp:'Gorduras trans elevam o LDL e reduzem o HDL, aumentando o risco de doenças cardiovasculares.'},
-      {e:'A rotulagem nutricional frontal (selo de alerta) adotada no Brasil tem como objetivo:', alt:['Aumentar vendas de produtos','Alertar sobre excesso de açúcar, sódio ou gorduras saturadas','Substituir a tabela nutricional','Informar apenas o preço'], c:1, exp:'A rotulagem de advertência frontal busca facilitar a identificação rápida de produtos com excesso de nutrientes críticos.'},
-      {e:'O pâncreas participa da digestão liberando enzimas no:', alt:['Estômago','Duodeno (intestino delgado)','Esôfago','Intestino grosso'], c:1, exp:'O suco pancreático, rico em enzimas, é liberado no duodeno para digerir carboidratos, proteínas e lipídios.'},
-      {e:'A bile, produzida pelo fígado e armazenada na vesícula biliar, tem função de:', alt:['Digerir proteínas','Emulsionar gorduras, facilitando sua digestão','Neutralizar ácidos estomacais','Produzir glicose'], c:1, exp:'A bile quebra gotículas de gordura em partículas menores, aumentando a superfície de ação das enzimas lipolíticas.'},
-      {e:'A obesidade é caracterizada, segundo o IMC (Índice de Massa Corporal), por valores:', alt:['Abaixo de 18,5','Entre 18,5 e 24,9','Igual ou maior que 30','Entre 25 e 29,9'], c:2, exp:'O IMC igual ou superior a 30 kg/m² é o critério da OMS para classificar obesidade.'},
-      {e:'O sódio em excesso na dieta está diretamente relacionado a:', alt:['Anemia','Hipertensão arterial','Escorbuto','Hipoglicemia'], c:1, exp:'O excesso de sódio retém líquido nos vasos sanguíneos, elevando a pressão arterial.'},
-      {e:'A pirâmide alimentar tradicional posiciona na base os alimentos:', alt:['Ricos em açúcar','Fontes de carboidratos, como cereais e tubérculos','Doces e gorduras','Carnes vermelhas'], c:1, exp:'A base da pirâmide concentra os alimentos energéticos de maior consumo diário recomendado.'},
-      {e:'A taxa metabólica basal tende a ser maior em pessoas com:', alt:['Maior massa muscular','Maior percentual de gordura corporal','Idade mais avançada','Menor altura'], c:0, exp:'O tecido muscular consome mais energia em repouso do que o tecido adiposo, elevando o gasto calórico basal.'},
-      {e:'O leite e derivados são a principal fonte alimentar de:', alt:['Ferro','Cálcio','Vitamina C','Fibras'], c:1, exp:'O cálcio do leite é essencial para a formação e manutenção óssea.'},
-      {e:'A ingestão insuficiente de iodo pode causar:', alt:['Escorbuto','Bócio (aumento da tireoide)','Raquitismo','Anemia'], c:1, exp:'O iodo é essencial para a produção de hormônios tireoidianos; sua falta leva ao aumento compensatório da glândula.'},
-      {e:'Alimentos ultraprocessados geralmente apresentam:', alt:['Alto teor de fibras naturais','Excesso de sódio, açúcar e conservantes','Baixa durabilidade','Ausência de aditivos'], c:1, exp:'Esses produtos passam por processos industriais que adicionam sódio, açúcares e conservantes para sabor e durabilidade.'},
-      {e:'A hidratação adequada é essencial porque a água no corpo humano participa:', alt:['Apenas da sudorese','Do transporte de nutrientes, regulação térmica e reações metabólicas','Somente da digestão de gorduras','Só da excreção renal'], c:1, exp:'A água é o principal componente do sangue e do meio intracelular, envolvida em praticamente todas as funções metabólicas.'},
-      {e:'O açúcar simples (monossacarídeo) absorvido diretamente pelo intestino é:', alt:['Sacarose','Glicose','Amido','Celulose'], c:1, exp:'A glicose é o monossacarídeo final resultante da digestão de carboidratos, absorvido diretamente na corrente sanguínea.'},
-      {e:'A vitamina B12 é essencial para a formação de:', alt:['Ossos','Hemácias e sistema nervoso','Músculos','Colágeno'], c:1, exp:'A deficiência de B12 pode causar anemia megaloblástica e alterações neurológicas.'},
-      {e:'Uma dieta rica em fibras solúveis auxilia no controle de:', alt:['Pressão arterial apenas','Colesterol e glicemia','Anemia','Cãibras musculares'], c:1, exp:'Fibras solúveis formam um gel no intestino que retarda a absorção de glicose e ajuda a reduzir o colesterol.'},
-      {e:'O consumo excessivo de bebidas açucaradas está associado ao aumento de risco de:', alt:['Escorbuto','Diabetes tipo 2 e obesidade','Anemia','Osteoporose apenas'], c:1, exp:'O excesso de açúcar simples contribui para resistência à insulina e ganho de peso.'},
-      {e:'A desidratação severa pode causar, entre outros sintomas:', alt:['Aumento da pressão arterial apenas','Queda de pressão, tontura e confusão mental','Ganho de peso imediato','Melhora da concentração'], c:1, exp:'A perda de líquidos reduz o volume sanguíneo, afetando a perfusão cerebral e a pressão arterial.'},
-      {e:'A digestão de lipídios depende principalmente da enzima:', alt:['Amilase','Lipase','Pepsina','Tripsina'], c:1, exp:'A lipase pancreática quebra os triglicerídeos em ácidos graxos e glicerol.'},
-      {e:'Uma alimentação pobre em vitamina A pode causar:', alt:['Cegueira noturna','Escorbuto','Bócio','Anemia'], c:0, exp:'A vitamina A é essencial para a formação de pigmentos visuais da retina.'},
-      {e:'O consumo equilibrado de proteínas é especialmente importante durante:', alt:['Apenas o sono','O crescimento, a gravidez e a recuperação muscular','Apenas em idosos','Somente em atletas de alto rendimento'], c:1, exp:'Proteínas fornecem aminoácidos para síntese e reparo de tecidos, essenciais nessas fases de maior demanda.'},
-      {e:'O termo "densidade nutricional" de um alimento refere-se a:', alt:['Seu peso em gramas','A quantidade de nutrientes por caloria oferecida','Seu preço no mercado','Sua cor e textura'], c:1, exp:'Alimentos nutricionalmente densos oferecem muitos nutrientes com relativamente poucas calorias.'},
-      {e:'A prática de pular refeições ao longo do dia pode levar a:', alt:['Melhora do metabolismo','Compensação alimentar excessiva e hipoglicemia','Aumento da imunidade','Nenhum efeito relevante'], c:1, exp:'Longos períodos em jejum podem causar queda de glicose e favorecer excessos na refeição seguinte.'}
-    ]
-  },
-  {
-    id:'enfermagem', colegio:'Biologia', faculdade:'Fisiologia Humana, Saúde Coletiva', horario:'08h00 – 09h30', local:'Pronto Atendimento', profissao:'Enfermeiro(a)', icone:'💉', selo:'Selo da Enfermagem',
-    caso:{ paciente:'M. O., 17 anos', queixa:'Falta de ar e mal-estar após um mutirão de vacinação na comunidade', narrativa:'Antes de qualquer conduta, a equipe de enfermagem precisa estabilizar os sinais vitais do paciente e avaliar o cenário de saúde pública ao redor do caso.' },
-    perguntas:[
-      {e:'A frequência cardíaca normal de um adulto em repouso está na faixa de:', alt:['40–60 bpm','60–100 bpm','100–140 bpm','140–180 bpm'], c:1, exp:'A frequência cardíaca de repouso saudável em adultos varia entre 60 e 100 batimentos por minuto.'},
-      {e:'A pressão arterial é medida em qual unidade?', alt:['mmHg','bpm','°C','mL/min'], c:0, exp:'A pressão arterial é registrada em milímetros de mercúrio (mmHg), como em "120x80 mmHg".'},
-      {e:'O sistema circulatório humano é classificado como:', alt:['Aberto e simples','Fechado e duplo completo','Aberto e duplo','Fechado e simples'], c:1, exp:'É fechado (sangue nos vasos), duplo (circuitos pulmonar e sistêmico) e completo (sem mistura de sangue arterial e venoso no coração).'},
-      {e:'Em uma parada cardiorrespiratória, a relação compressão:ventilação recomendada na RCP para adultos é:', alt:['15:2','30:2','5:1','10:1'], c:1, exp:'O protocolo padrão de reanimação cardiopulmonar em adultos usa 30 compressões para 2 ventilações.'},
-      {e:'Uma epidemia se diferencia de uma pandemia porque:', alt:['A epidemia é sempre mais grave','A pandemia tem alcance mundial; a epidemia é regional','São sinônimos','A epidemia afeta apenas animais'], c:1, exp:'Epidemia é o aumento de casos em uma região; pandemia é a disseminação em escala global.'},
-      {e:'O sangue tipo O é considerado doador universal porque:', alt:['Não possui antígenos A e B nas hemácias','Possui todos os antígenos','É o tipo mais raro','Só pode receber de tipo AB'], c:0, exp:'Sem antígenos A ou B na superfície das hemácias, o sangue tipo O costuma ser compatível com os demais grupos em transfusão.'}
-    ],
-    extra:[
-      {e:'A temperatura corporal normal em adultos gira em torno de:', alt:['30°C','36–37°C','39–40°C','42°C'], c:1, exp:'Variações significativas fora dessa faixa podem indicar hipotermia ou febre, sinal de processo infeccioso ou inflamatório.'},
-      {e:'A tríade de sinais vitais mais monitorada em pronto atendimento inclui:', alt:['Peso, altura, idade','Temperatura, pressão arterial e frequência cardíaca','Cor da pele, humor, apetite','Glicemia, colesterol, ferro'], c:1, exp:'Esses parâmetros, junto à frequência respiratória, formam a base da avaliação inicial de um paciente.'},
-      {e:'Vacinas atuam no organismo estimulando:', alt:['Produção de anticorpos por resposta imune','Destruição do sistema imunológico','Aumento permanente da temperatura corporal','Redução de glóbulos brancos'], c:0, exp:'A vacina expõe o sistema imune a um antígeno atenuado ou inativado, gerando memória imunológica sem causar a doença.'},
-      {e:'Doenças transmitidas pelo mosquito Aedes aegypti incluem:', alt:['Tuberculose e sarampo','Dengue, zika e chikungunya','Hepatite e HIV','Cólera e tétano'], c:1, exp:'Esse mosquito é vetor de diversas arboviroses que compartilham sintomas como febre e dor articular.'},
-      {e:'A lavagem correta das mãos é uma medida eficaz principalmente para prevenir:', alt:['Doenças genéticas','Infecções por contato','Fraturas','Alergias alimentares'], c:1, exp:'A higienização correta remove micro-organismos que se transmitem por contato, reduzindo infecções cruzadas.'},
-      {e:'Em caso de queimadura de primeiro grau, a conduta inicial recomendada é:', alt:['Aplicar gelo diretamente','Lavar em água corrente fria por alguns minutos','Estourar bolhas','Aplicar pasta de dente'], c:1, exp:'Água corrente fria (não gelada) ajuda a dissipar o calor e reduzir a lesão tecidual sem agredir a pele.'},
-      {e:'O Equipamento de Proteção Individual (EPI) básico em procedimentos com risco de contato com sangue inclui:', alt:['Apenas máscara','Luvas, máscara e óculos de proteção','Somente avental','Nenhum, se o paciente for conhecido'], c:1, exp:'A barreira completa protege contra respingos e contato direto com fluidos potencialmente contaminados.'},
-      {e:'O protocolo de triagem de Manchester classifica pacientes por:', alt:['Ordem de chegada','Gravidade clínica, definindo prioridade de atendimento','Idade','Convênio médico'], c:1, exp:'Cores indicam urgência, do vermelho (emergência) ao azul (não urgente), otimizando o atendimento.'},
-      {e:'Um sinal de alerta para AVC (Acidente Vascular Cerebral) é:', alt:['Dor de cabeça leve isolada','Fraqueza súbita de um lado do corpo e dificuldade de fala','Espirros frequentes','Sede excessiva'], c:1, exp:'Esses sinais indicam possível interrupção do fluxo sanguíneo cerebral, exigindo atendimento imediato.'},
-      {e:'A glicemia capilar é um exame rápido usado para medir:', alt:['Pressão arterial','Nível de glicose no sangue','Saturação de oxigênio','Frequência cardíaca'], c:1, exp:'Uma gota de sangue capilar é analisada em um glicosímetro para monitorar diabetes.'},
-      {e:'A saturação de oxigênio no sangue é medida por qual equipamento?', alt:['Esfigmomanômetro','Oxímetro de pulso','Termômetro','Estetoscópio'], c:1, exp:'O oxímetro mede, por luz infravermelha, o percentual de hemoglobina saturada com oxigênio.'},
-      {e:'Diante de uma pessoa em convulsão, a conduta correta é:', alt:['Conter os movimentos com força','Proteger a cabeça e afastar objetos, sem conter os movimentos','Colocar objetos na boca','Erguer a pessoa imediatamente'], c:1, exp:'Conter à força pode causar lesões; o foco é proteger o paciente até a crise passar.'},
-      {e:'O choque anafilático é uma reação alérgica grave que pode causar:', alt:['Melhora da respiração','Queda de pressão e dificuldade respiratória, com risco de morte','Aumento de apetite','Sonolência leve apenas'], c:1, exp:'A liberação massiva de histamina provoca vasodilatação e edema de vias aéreas, exigindo atendimento de emergência.'},
-      {e:'A notificação compulsória de doenças ao serviço de saúde pública serve para:', alt:['Multar o paciente','Monitorar e controlar surtos e epidemias','Cobrar exames extras','Reduzir o número de leitos'], c:1, exp:'Notificar casos de doenças de interesse público permite ações rápidas de vigilância epidemiológica.'},
-      {e:'O SUS (Sistema Único de Saúde) tem como um de seus princípios:', alt:['Atendimento exclusivo a quem paga impostos','Universalidade, garantindo acesso a todos os cidadãos','Atendimento só em emergências','Cobertura apenas hospitalar'], c:1, exp:'A universalidade é um dos princípios constitucionais do SUS, ao lado da integralidade e equidade.'},
-      {e:'A frequência respiratória normal em adultos em repouso é de aproximadamente:', alt:['4–8 respirações/min','12–20 respirações/min','30–40 respirações/min','50–60 respirações/min'], c:1, exp:'Valores fora dessa faixa podem indicar desconforto respiratório ou outras alterações clínicas.'},
-      {e:'Uma ferida contaminada deve, antes de qualquer curativo, ser:', alt:['Coberta imediatamente sem limpeza','Limpa com solução adequada para reduzir risco de infecção','Deixada exposta ao ar por dias','Tratada apenas com pomada, sem limpeza'], c:1, exp:'A limpeza correta remove sujidades e reduz a carga microbiana antes da cobertura.'},
-      {e:'O tétano, doença prevenível por vacina, é causado por uma bactéria presente principalmente em:', alt:['Água potável','Solo contaminado e objetos enferrujados','Ar puro','Alimentos crus apenas'], c:1, exp:'O Clostridium tetani é encontrado no solo e pode contaminar feridas profundas ou perfurantes.'},
-      {e:'A pressão arterial "120x80 mmHg" representa, respectivamente:', alt:['Pressão diastólica e sistólica','Pressão sistólica e diastólica','Frequência cardíaca e respiratória','Temperatura e pulso'], c:1, exp:'O primeiro número é a pressão sistólica (contração do coração) e o segundo, a diastólica (relaxamento).'},
-      {e:'Em uma pessoa que desmaiou mas respira normalmente, a posição recomendada geralmente é:', alt:['Sentada, com a cabeça entre os joelhos','Deitada, com as pernas elevadas, se não houver contraindicação','De pé, apoiada na parede','De bruços, sem monitoramento'], c:1, exp:'Elevar as pernas favorece o retorno de sangue à cabeça, ajudando a recuperar a consciência.'},
-      {e:'A infecção hospitalar está frequentemente associada à falha em:', alt:['Uso de crachás de identificação','Protocolos de higienização e assepsia','Preenchimento de prontuários','Horários de visita'], c:1, exp:'A falta de higienização adequada das mãos e de materiais é a principal via de transmissão de infecções em ambiente hospitalar.'},
-      {e:'Um curativo oclusivo tem como principal função:', alt:['Impedir totalmente a cicatrização','Proteger a ferida contra contaminação externa e manter ambiente adequado à cicatrização','Aumentar o sangramento','Substituir a necessidade de higiene'], c:1, exp:'O curativo cria uma barreira física que protege a lesão enquanto favorece o processo de reparo tecidual.'},
-      {e:'A prevenção de quedas em pacientes idosos hospitalizados inclui:', alt:['Deixar o leito sempre elevado ao máximo','Manter grades laterais e ambiente livre de obstáculos','Reduzir a iluminação do quarto','Evitar qualquer supervisão'], c:1, exp:'Medidas ambientais simples reduzem significativamente o risco de queda em pacientes com mobilidade reduzida.'},
-      {e:'O Rh negativo em uma gestante com feto Rh positivo pode gerar risco de:', alt:['Nenhum problema','Incompatibilidade sanguínea em gestações seguintes','Apenas anemia na mãe','Diabetes gestacional'], c:1, exp:'O contato do sangue materno com antígenos Rh+ do feto pode sensibilizar a mãe, afetando gestações futuras se não houver profilaxia.'},
-      {e:'Diante de um paciente com suspeita de fratura em um membro, a conduta inicial correta é:', alt:['Tentar realinhar o osso manualmente','Imobilizar o membro na posição encontrada e buscar atendimento','Massagear a região','Aplicar calor local imediatamente'], c:1, exp:'Imobilizar sem manipular evita agravar a lesão até avaliação especializada.'},
-      {e:'O termo "profilaxia" em saúde refere-se a:', alt:['Tratamento de doenças já instaladas','Conjunto de medidas para prevenir doenças','Diagnóstico laboratorial','Cirurgia de emergência'], c:1, exp:'Profilaxia abrange ações preventivas, como vacinação e uso de EPIs, para evitar o adoecimento.'},
-      {e:'Em uma parada cardíaca com desfibrilador automático externo (DEA) disponível, o equipamento deve ser usado:', alt:['Somente por médicos','O quanto antes, seguindo as instruções do próprio aparelho','Apenas após 10 minutos de RCP','Nunca em ambiente não hospitalar'], c:1, exp:'O DEA foi desenvolvido para uso rápido por qualquer pessoa treinada, aumentando a chance de sobrevivência quando usado precocemente.'},
-      {e:'O monitoramento da diurese (volume de urina) em pacientes internados ajuda a avaliar:', alt:['Apenas a função pulmonar','A função renal e o estado de hidratação','Somente o apetite','A pressão intracraniana'], c:1, exp:'Alterações no volume urinário podem indicar desidratação, insuficiência renal ou sobrecarga de líquidos.'},
-      {e:'Doenças como sarampo e coqueluche voltaram a preocupar autoridades de saúde principalmente devido à:', alt:['Mutação constante dos vírus','Queda nas taxas de cobertura vacinal','Melhoria do saneamento','Aumento da temperatura global'], c:1, exp:'Quando a cobertura vacinal cai, a imunidade coletiva diminui, facilitando surtos de doenças antes controladas.'},
-      {e:'A escala de dor, usada na avaliação de enfermagem, tem como objetivo:', alt:['Substituir exames laboratoriais','Quantificar subjetivamente a intensidade da dor relatada pelo paciente','Medir a pressão arterial','Avaliar apenas pacientes inconscientes'], c:1, exp:'Por ser um sintoma subjetivo, a dor é avaliada por escalas (como a numérica de 0 a 10) para orientar a conduta terapêutica.'}
-    ]
-  },
-  {
-    id:'biomedicina', colegio:'Biologia, Química', faculdade:'Genética, Microbiologia, Imunologia', horario:'09h30 – 10h30', local:'Laboratório de Análises Clínicas', profissao:'Biomédico(a)', icone:'🧬', selo:'Selo da Biomedicina',
-    caso:{ paciente:'Amostra nº 214', queixa:'Suspeita de infecção viral aguda', narrativa:'As amostras de sangue chegaram ao laboratório. Você precisa interpretar exames e técnicas laboratoriais para confirmar — ou descartar — o diagnóstico.' },
-    perguntas:[
-      {e:'O DNA é composto por quantas bases nitrogenadas diferentes?', alt:['2','3','4','5'], c:2, exp:'As quatro bases são adenina (A), timina (T), citosina (C) e guanina (G).'},
-      {e:'Uma mutação genética pontual pode ser causada por:', alt:['Troca de uma base nitrogenada','Divisão celular normal','Circulação sanguínea','Digestão de proteínas'], c:0, exp:'A substituição de uma única base no DNA já caracteriza uma mutação pontual.'},
-      {e:'Vírus se diferenciam de bactérias porque:', alt:['Vírus são procariontes','Vírus não têm estrutura celular própria','Bactérias não possuem DNA','Vírus são maiores que bactérias'], c:1, exp:'Vírus são partículas acelulares que dependem de uma célula hospedeira para se replicar.'},
-      {e:'Anticorpos são produzidos principalmente por qual célula do sistema imune?', alt:['Hemácias','Plaquetas','Linfócitos B (plasmócitos)','Neurônios'], c:2, exp:'Os linfócitos B, ao se diferenciarem em plasmócitos, produzem os anticorpos.'},
-      {e:'A herança dos grupos sanguíneos do sistema ABO segue o padrão de:', alt:['Alelos múltiplos com codominância','Herança ligada ao sexo','Herança citoplasmática','Herança quantitativa'], c:0, exp:'O sistema ABO envolve três alelos (A, B, i), com codominância entre A e B.'},
-      {e:'A técnica de PCR (Reação em Cadeia da Polimerase) é usada para:', alt:['Medir pressão arterial','Amplificar fragmentos de DNA','Contar hemácias','Medir glicemia'], c:1, exp:'O PCR amplifica trechos específicos de DNA, permitindo detectar material genético de patógenos.'}
-    ],
-    extra:[
-      {e:'A estrutura em dupla hélice do DNA foi proposta por:', alt:['Watson e Crick','Darwin','Mendel','Pasteur'], c:0, exp:'Eles descreveram a estrutura em dupla hélice em 1953, com base em dados de difração de raios-X.'},
-      {e:'Bactérias são organismos:', alt:['Eucariontes multicelulares','Procariontes unicelulares','Vírus modificados','Fungos simples'], c:1, exp:'Não possuem núcleo delimitado por membrana, diferente das células eucariontes.'},
-      {e:'O exame de tipagem sanguínea identifica:', alt:['O nível de glicose','Antígenos nas hemácias (sistema ABO e Rh)','A quantidade de plaquetas','O pH do sangue'], c:1, exp:'Identifica quais antígenos (A, B) e o fator Rh estão presentes nas hemácias, definindo compatibilidade para transfusão.'},
-      {e:'A resistência bacteriana a antibióticos ocorre principalmente por:', alt:['Uso correto e completo dos medicamentos','Mutações e seleção natural favorecendo bactérias resistentes','Vacinação em excesso','Falta de vírus no ambiente'], c:1, exp:'Bactérias resistentes sobrevivem e se multiplicam quando o uso é inadequado, selecionando cepas mais fortes.'},
-      {e:'Um exame de PCR para detectar um vírus busca identificar:', alt:['Anticorpos no sangue','Material genético (RNA/DNA) do patógeno','O nível de oxigênio','O grupo sanguíneo'], c:1, exp:'Amplifica o material genético do patógeno, permitindo detectar mesmo pequenas quantidades de vírus ou bactérias.'},
-      {e:'Um cromossomo é composto por:', alt:['Apenas proteínas','DNA condensado, associado a proteínas histonas','Apenas RNA','Lipídios de membrana'], c:1, exp:'O DNA se organiza junto a proteínas histonas formando a cromatina, que se condensa em cromossomos durante a divisão celular.'},
-      {e:'A primeira lei de Mendel trata da:', alt:['Herança de dois caracteres simultaneamente','Segregação independente de um único par de alelos','Ligação sexual','Mutação genética'], c:1, exp:'Mendel demonstrou que cada característica é determinada por um par de alelos que se separam na formação dos gametas.'},
-      {e:'Um exame de ELISA é comumente utilizado para detectar:', alt:['Fraturas ósseas','Anticorpos ou antígenos específicos no sangue','Nível de glicose','Grupo sanguíneo'], c:1, exp:'O ELISA usa reações antígeno-anticorpo marcadas para identificar a presença de determinada substância biológica.'},
-      {e:'Fungos, diferentemente das bactérias, são organismos:', alt:['Procariontes','Eucariontes, podendo ser uni ou multicelulares','Sempre multicelulares','Sem parede celular'], c:1, exp:'Os fungos possuem núcleo organizado e parede celular composta de quitina, diferente das bactérias.'},
-      {e:'A técnica de cultura microbiológica em laboratório serve para:', alt:['Medir a pressão arterial','Multiplicar micro-organismos para identificação e testes de sensibilidade','Extrair DNA apenas','Realizar transfusões'], c:1, exp:'Cultivar amostras em meios apropriados permite identificar o agente infeccioso e testar sua sensibilidade a antibióticos.'},
-      {e:'Os protozoários, como o causador da malária, são organismos:', alt:['Procariontes multicelulares','Eucariontes unicelulares','Vírus modificados','Fungos filamentosos'], c:1, exp:'Protozoários são eucariontes unicelulares, muitos dos quais parasitas causadores de doenças como malária e toxoplasmose.'},
-      {e:'A hereditariedade ligada ao sexo, como no caso do daltonismo, geralmente está associada a genes localizados no cromossomo:', alt:['Y apenas','X','Autossômico qualquer','Mitocondrial'], c:1, exp:'A maioria dos genes ligados ao sexo estudados no ensino médio está no cromossomo X, explicando maior incidência em homens.'},
-      {e:'Um hemograma completo permite avaliar principalmente:', alt:['Função hepática','Células do sangue: hemácias, leucócitos e plaquetas','Função renal','Nível hormonal'], c:1, exp:'Esse exame quantifica e caracteriza os componentes celulares do sangue, auxiliando no diagnóstico de anemias e infecções.'},
-      {e:'A engenharia genética que insere um gene de uma espécie em outra é chamada de:', alt:['Clonagem','Transgenia','Mutação espontânea','Meiose'], c:1, exp:'Organismos transgênicos recebem genes de outras espécies para expressar características específicas.'},
-      {e:'Vírus como o influenza sofrem mutações frequentes, um processo relacionado a:', alt:['Reprodução sexuada','Alta taxa de erro na replicação do material genético viral','Fotossíntese','Respiração celular'], c:1, exp:'A replicação viral rápida e com baixa fidelidade favorece o surgimento de novas variantes.'},
-      {e:'Em biossegurança laboratorial, materiais perfurocortantes contaminados devem ser descartados em:', alt:['Lixo comum','Recipientes rígidos e identificados','Pia do laboratório','Sacos plásticos comuns'], c:1, exp:'Esse tipo de descarte evita acidentes com material biológico contaminado.'},
-      {e:'A meiose é um tipo de divisão celular que resulta em:', alt:['Duas células idênticas à célula-mãe','Quatro células com metade do número de cromossomos (gametas)','Apenas uma célula','Divisão exclusiva de bactérias'], c:1, exp:'A meiose reduz o número de cromossomos à metade, essencial para a formação de gametas na reprodução sexuada.'},
-      {e:'O teste do pezinho, realizado em recém-nascidos, tem como objetivo detectar precocemente:', alt:['Apenas malformações ósseas','Doenças genéticas e metabólicas','Grupo sanguíneo apenas','Alergias alimentares'], c:1, exp:'O exame rastreia diversas doenças metabólicas e genéticas que, tratadas precocemente, evitam complicações graves.'},
-      {e:'A sorologia para uma doença infecciosa avalia a presença de:', alt:['Bactérias vivas apenas','Anticorpos específicos, indicando contato prévio ou atual com o agente','Fungos no sangue','Apenas hemácias'], c:1, exp:'A detecção de anticorpos ajuda a determinar se a infecção é recente ou antiga.'},
-      {e:'O código genético é considerado universal porque:', alt:['Só existe em humanos','A mesma sequência de bases corresponde ao mesmo aminoácido na maioria dos seres vivos','Varia totalmente entre espécies','Não codifica proteínas'], c:1, exp:'Essa universalidade é uma evidência da origem evolutiva comum entre os seres vivos.'},
-      {e:'Uma mutação genética pode ser transmitida à descendência apenas se ocorrer em células:', alt:['Somáticas (do corpo)','Germinativas (gametas)','Sanguíneas','Musculares'], c:1, exp:'Apenas alterações no material genético dos gametas são passadas para a próxima geração.'},
-      {e:'O CRISPR é uma ferramenta biotecnológica utilizada para:', alt:['Medir a pressão arterial','Editar sequências específicas de DNA','Realizar transfusões sanguíneas','Diagnosticar fraturas'], c:1, exp:'Essa técnica permite cortar e modificar trechos específicos do DNA com alta precisão.'},
-      {e:'Bactérias Gram-positivas e Gram-negativas se diferenciam principalmente pela:', alt:['Cor natural da célula','Composição da parede celular, identificada por coloração específica','Velocidade de reprodução','Tamanho do núcleo'], c:1, exp:'A técnica de Gram usa corantes que reagem diferentemente conforme a espessura da parede celular bacteriana.'},
-      {e:'O exame de urina tipo I (urinálise) pode indicar, entre outras coisas:', alt:['Apenas grupo sanguíneo','Presença de infecção urinária ou alterações renais','Grupo genético','Alterações ósseas'], c:1, exp:'A presença de leucócitos, nitrito ou proteínas na urina pode indicar infecção ou disfunção renal.'},
-      {e:'A clonagem reprodutiva busca gerar um organismo:', alt:['Geneticamente idêntico a outro já existente','Com metade dos genes do doador','Totalmente diferente geneticamente','Apenas células sanguíneas'], c:0, exp:'A clonagem reprodutiva utiliza o material genético de um organismo doador para gerar uma cópia geneticamente idêntica.'},
-      {e:'Em um teste rápido de antígeno, o resultado positivo indica:', alt:['Presença de anticorpos apenas','Presença de proteínas específicas do próprio agente infeccioso','Grupo sanguíneo do paciente','Nível de glicose'], c:1, exp:'Esses testes detectam proteínas (antígenos) do próprio vírus ou bactéria, indicando infecção ativa.'},
-      {e:'A microscopia eletrônica, diferente da óptica, permite observar:', alt:['Apenas células vivas em movimento','Estruturas extremamente pequenas, como vírus, com grande resolução','Apenas organismos macroscópicos','Somente cores naturais das células'], c:1, exp:'O microscópio eletrônico utiliza feixes de elétrons, alcançando resolução muito maior que a luz visível.'},
-      {e:'As leveduras, usadas na produção de pão e cerveja, são exemplos de:', alt:['Bactérias','Fungos unicelulares','Vírus','Protozoários'], c:1, exp:'Leveduras são fungos unicelulares que realizam fermentação, processo explorado na indústria alimentícia.'},
-      {e:'Doenças autoimunes ocorrem quando o sistema imunológico:', alt:['Fica hiperativo contra agentes externos apenas','Ataca por engano células e tecidos do próprio corpo','Para de funcionar completamente','Produz excesso de hemácias'], c:1, exp:'Nessas condições, o sistema imune reconhece componentes próprios como estranhos, atacando-os.'},
-      {e:'A classificação de risco biológico dos agentes manipulados em laboratório orienta principalmente:', alt:['O preço dos exames','O nível de proteção e os equipamentos necessários no manuseio','O horário de atendimento','O tipo de uniforme apenas por estética'], c:1, exp:'Agentes de maior risco biológico exigem níveis de biossegurança mais altos, com equipamentos e protocolos específicos.'}
-    ]
-  },
-  {
-    id:'medicina', colegio:'Biologia, Química', faculdade:'Fisiologia, Endocrinologia', horario:'10h30 – 12h00', local:'Enfermaria — Clínica Médica', profissao:'Médico(a)', icone:'🩺', selo:'Selo da Medicina',
-    caso:{ paciente:'R. A., 58 anos', queixa:'Pressão arterial instável e palpitações', narrativa:'Como médico(a) de plantão, você precisa avaliar os sistemas do corpo do paciente para decidir a conduta clínica com segurança.' },
-    perguntas:[
-      {e:'O sistema nervoso autônomo se divide em:', alt:['Central e periférico','Simpático e parassimpático','Motor e sensitivo','Cerebral e espinhal'], c:1, exp:'O simpático prepara o corpo para ação (ex: acelera o coração); o parassimpático promove relaxamento.'},
-      {e:'A insulina é um hormônio pancreático com a função de:', alt:['Aumentar a glicemia','Reduzir a glicemia, facilitando a entrada de glicose nas células','Digerir proteínas','Regular a pressão arterial'], c:1, exp:'A insulina permite que a glicose do sangue entre nas células, reduzindo a glicemia.'},
-      {e:'A troca gasosa (O₂/CO₂) no sistema respiratório ocorre principalmente:', alt:['Na traqueia','Nos alvéolos pulmonares','Na laringe','Nos bronquíolos maiores'], c:1, exp:'É nos alvéolos, com paredes finíssimas, que ocorre a difusão de gases entre o ar e o sangue.'},
-      {e:'A homeostase é definida como:', alt:['A perda de equilíbrio do organismo','A capacidade do corpo de manter o equilíbrio interno','O processo de digestão','A divisão celular'], c:1, exp:'Homeostase é o conjunto de mecanismos que mantêm as condições internas do corpo estáveis.'},
-      {e:'A adrenalina, liberada em situações de estresse, é produzida pela:', alt:['Tireoide','Glândula adrenal (suprarrenal)','Hipófise','Pâncreas'], c:1, exp:'As glândulas adrenais, localizadas sobre os rins, liberam adrenalina em respostas de estresse.'},
-      {e:'Qual estrutura do encéfalo é responsável pela coordenação motora e pelo equilíbrio?', alt:['Cerebelo','Bulbo','Hipotálamo','Córtex visual'], c:0, exp:'O cerebelo coordena movimentos precisos e o equilíbrio corporal.'}
-    ],
-    extra:[
-      {e:'O coração humano possui quantas cavidades (câmaras)?', alt:['2','3','4','6'], c:2, exp:'Duas aurículas (átrios) recebem sangue e dois ventrículos o bombeiam, permitindo a circulação dupla e completa.'},
-      {e:'O hormônio liberado pela hipófise que regula o crescimento é:', alt:['Insulina','GH (hormônio do crescimento)','Adrenalina','Melatonina'], c:1, exp:'O GH estimula o crescimento ósseo e muscular, sendo mais ativo durante a infância e adolescência.'},
-      {e:'A hipertensão sobrecarrega principalmente:', alt:['Apenas fígado e rins','Coração e vasos, podendo afetar rins e cérebro','Apenas os pulmões','Apenas os ossos'], c:1, exp:'A pressão elevada constante força o coração a trabalhar mais e pode lesar as paredes arteriais.'},
-      {e:'O sistema nervoso central é formado por:', alt:['Nervos periféricos','Encéfalo e medula espinhal','Apenas o cérebro','Músculos e ossos'], c:1, exp:'Juntos, processam e transmitem os impulsos nervosos que controlam funções voluntárias e involuntárias do corpo.'},
-      {e:'A febre geralmente indica:', alt:['Falha total do sistema imune','Resposta de defesa a infecções ou inflamações','Uma doença genética','Falta de vitaminas'], c:1, exp:'O aumento da temperatura corporal dificulta a multiplicação de muitos patógenos e potencializa a resposta imune.'},
-      {e:'O sistema renina-angiotensina-aldosterona atua principalmente na regulação:', alt:['Da digestão','Da pressão arterial e do equilíbrio hídrico','Do sono','Da visão'], c:1, exp:'Esse sistema hormonal controla a retenção de sódio e água pelos rins, influenciando diretamente a pressão arterial.'},
-      {e:'A diabetes tipo 1 se diferencia da tipo 2 porque:', alt:['O tipo 1 é causado por resistência à insulina','O tipo 1 envolve destruição autoimune das células produtoras de insulina','O tipo 2 sempre aparece na infância','Não há diferença relevante'], c:1, exp:'No tipo 1, o sistema imune ataca as células beta do pâncreas; no tipo 2, há resistência à ação da insulina.'},
-      {e:'O sistema digestório inicia a digestão de carboidratos ainda na:', alt:['Boca, pela amilase salivar','Faringe','Intestino grosso','Vesícula biliar'], c:0, exp:'A amilase salivar já começa a quebrar o amido em moléculas menores durante a mastigação.'},
-      {e:'Os rins participam da homeostase corporal principalmente através da:', alt:['Produção de insulina','Filtração do sangue e formação da urina, regulando líquidos e eletrólitos','Digestão de proteínas','Produção de anticorpos'], c:1, exp:'Os rins filtram substâncias do sangue, eliminando resíduos e regulando o volume e a composição dos líquidos corporais.'},
-      {e:'A hipófise é conhecida como "glândula mestra" porque:', alt:['É a maior glândula do corpo','Regula a atividade de diversas outras glândulas endócrinas','Só atua na infância','Produz apenas um hormônio'], c:1, exp:'Hormônios hipofisários controlam tireoide, suprarrenais e gônadas, entre outras glândulas.'},
-      {e:'A frequência cardíaca é controlada, entre outros fatores, pelo:', alt:['Sistema digestório','Sistema nervoso autônomo e por hormônios como a adrenalina','Sistema urinário','Sistema tegumentar'], c:1, exp:'O sistema simpático acelera e o parassimpático desacelera os batimentos, junto à ação hormonal.'},
-      {e:'Os alvéolos pulmonares são estruturas adaptadas à troca gasosa por apresentarem:', alt:['Parede espessa e pouca vascularização','Parede finíssima e ampla superfície de contato com capilares','Grande quantidade de músculo','Revestimento ósseo'], c:1, exp:'Essas características favorecem a difusão rápida e eficiente de oxigênio e dióxido de carbono.'},
-      {e:'A insuficiência cardíaca ocorre quando o coração:', alt:['Bate acima do normal apenas','Perde a capacidade de bombear sangue de forma eficiente','Para completamente','Aumenta a produção de hemácias'], c:1, exp:'Nessa condição, órgãos e tecidos recebem menos oxigênio e nutrientes, causando fadiga e falta de ar.'},
-      {e:'Os neurônios se comunicam entre si principalmente através de:', alt:['Contato direto de núcleos','Sinapses, com liberação de neurotransmissores','Circulação sanguínea','Divisão celular constante'], c:1, exp:'Nas sinapses, substâncias químicas transmitem o impulso nervoso de um neurônio a outro.'},
-      {e:'A tireoide, através dos hormônios T3 e T4, regula principalmente:', alt:['A digestão de gorduras','O metabolismo basal do corpo','A coagulação sanguínea','A produção de urina'], c:1, exp:'Esses hormônios influenciam o ritmo com que as células produzem e utilizam energia.'},
-      {e:'Uma arritmia cardíaca é definida como:', alt:['Batimento cardíaco sempre acelerado','Alteração no ritmo normal dos batimentos cardíacos','Ausência total de batimentos','Aumento permanente da pressão'], c:1, exp:'Pode se manifestar como batimentos acelerados, lentos ou irregulares, com diferentes causas e graus de gravidade.'},
-      {e:'O efeito de um medicamento anti-inflamatório geralmente atua:', alt:['Aumentando a produção de substâncias inflamatórias','Reduzindo mediadores químicos responsáveis pela inflamação','Matando bactérias diretamente','Aumentando a temperatura corporal'], c:1, exp:'Muitos anti-inflamatórios inibem enzimas envolvidas na produção de substâncias que geram dor e inflamação.'},
-      {e:'A pele participa da homeostase térmica principalmente por meio:', alt:['Da respiração celular','Da sudorese e da vasodilatação/vasoconstrição dos vasos superficiais','Da digestão de gorduras','Da produção hormonal exclusiva'], c:1, exp:'O suor evapora e resfria o corpo, enquanto o calibre dos vasos sanguíneos ajusta a perda ou retenção de calor.'},
-      {e:'O sistema linfático contribui para a defesa do organismo principalmente por meio:', alt:['Da produção de hemácias','Dos linfonodos, que filtram a linfa e concentram células de defesa','Da digestão de lipídios','Da regulação da pressão arterial'], c:1, exp:'Os linfonodos atuam como filtros que retêm patógenos e ativam a resposta imunológica.'},
-      {e:'As DCNTs (doenças crônicas não transmissíveis), como hipertensão e diabetes, estão frequentemente associadas a:', alt:['Contágio direto entre pessoas','Fatores como sedentarismo, má alimentação e genética','Exclusivamente a vírus','Uso de vacinas'], c:1, exp:'Diferente das doenças infecciosas, as DCNTs têm origem multifatorial ligada a hábitos de vida e predisposição genética.'},
-      {e:'A insulina e o glucagon, hormônios pancreáticos, atuam de forma:', alt:['Idêntica sobre a glicemia','Antagônica: a insulina reduz e o glucagon aumenta a glicose sanguínea','Independente da glicemia','Exclusiva sobre a digestão de proteínas'], c:1, exp:'Esse equilíbrio hormonal mantém a glicemia dentro de valores adequados ao longo do dia.'},
-      {e:'O exame de eletrocardiograma (ECG) avalia principalmente:', alt:['A função renal','A atividade elétrica do coração','A capacidade pulmonar','O nível de glicose'], c:1, exp:'O ECG registra os impulsos elétricos que coordenam a contração cardíaca, ajudando a identificar arritmias.'},
-      {e:'A anemia, de forma geral, está relacionada à redução de:', alt:['Glóbulos brancos','Hemoglobina ou hemácias, reduzindo o transporte de oxigênio','Plaquetas apenas','Plasma sanguíneo'], c:1, exp:'Com menos hemoglobina funcional, o transporte de oxigênio aos tecidos fica comprometido, causando fadiga e palidez.'},
-      {e:'O reflexo simples, como o de retirar a mão de algo quente, envolve principalmente:', alt:['O córtex cerebral, de forma consciente','A medula espinhal, de forma rápida e involuntária','Apenas os músculos, sem participação nervosa','O sistema digestório'], c:1, exp:'Reflexos são respostas rápidas processadas na medula, sem esperar pela decisão consciente do cérebro.'},
-      {e:'O sistema imunológico inato se diferencia do adaptativo porque:', alt:['Só atua após vacinação','Responde de forma rápida e geral, sem memória específica','Produz apenas anticorpos','Não existe em humanos'], c:1, exp:'O sistema inato oferece a primeira linha de defesa, enquanto o adaptativo desenvolve resposta específica e memória imunológica.'},
-      {e:'A pressão de pulso, diferença entre pressão sistólica e diastólica, ajuda a avaliar:', alt:['Apenas a glicemia','A rigidez arterial e o funcionamento cardiovascular','A função hepática','A temperatura corporal'], c:1, exp:'Valores muito altos ou baixos dessa diferença podem indicar alterações na elasticidade das artérias.'},
-      {e:'O estresse crônico pode elevar cronicamente os níveis de:', alt:['Insulina apenas','Cortisol, hormônio liberado pelas glândulas suprarrenais','Vitamina D','Cálcio ósseo apenas'], c:1, exp:'O cortisol em excesso e prolongado está associado a alterações metabólicas, imunológicas e cardiovasculares.'},
-      {e:'Os pulmões, ao final de uma expiração forçada, ainda retêm um volume de ar chamado:', alt:['Volume corrente','Volume residual','Capacidade vital','Espaço morto'], c:1, exp:'Esse volume residual impede o colabamento total dos alvéolos, mesmo após a expiração máxima.'},
-      {e:'O choque hipovolêmico ocorre principalmente devido a:', alt:['Excesso de líquido no corpo','Perda significativa de volume sanguíneo ou de líquidos corporais','Aumento da pressão intracraniana','Excesso de glicose no sangue'], c:1, exp:'A redução do volume circulante compromete a perfusão dos órgãos, exigindo reposição rápida de líquidos.'},
-      {e:'A homeostase da glicemia é um exemplo clássico de mecanismo de:', alt:['Retroalimentação positiva, que amplia o desequilíbrio','Retroalimentação negativa, que restaura o equilíbrio','Ausência de regulação','Regulação exclusivamente nervosa'], c:1, exp:'Quando a glicemia sobe ou desce além do ideal, hormônios agem para trazê-la de volta à faixa normal.'}
-    ]
-  },
-  {
-    id:'to', colegio:'Biologia, Sociologia', faculdade:'Anatomia, Cinesiologia', horario:'13h00 – 14h00', local:'Setor de Reabilitação', profissao:'Terapeuta Ocupacional', icone:'🦾', selo:'Selo da Terapia Ocupacional',
-    caso:{ paciente:'C. F., 16 anos', queixa:'Dificuldade motora para atividades básicas após um acidente', narrativa:'Você avalia a estrutura corporal do paciente e propõe adaptações que devolvam autonomia ao seu dia a dia.' },
-    perguntas:[
-      {e:'As articulações sinoviais, como o joelho, permitem:', alt:['Nenhum movimento','Movimento amplo, amortecido por líquido sinovial','Apenas rotação','Movimento apenas em bebês'], c:1, exp:'O líquido sinovial reduz o atrito e permite grande amplitude de movimento nessas articulações.'},
-      {e:'A Lei Brasileira de Inclusão (Lei 13.146/2015) tem como objetivo principal:', alt:['Regular hospitais privados','Assegurar direitos e a inclusão social de pessoas com deficiência','Definir currículos escolares','Organizar o SUS'], c:1, exp:'Também chamada de Estatuto da Pessoa com Deficiência, garante direitos e acessibilidade.'},
-      {e:'Os músculos esqueléticos são classificados como:', alt:['Involuntários e estriados','Voluntários e estriados','Involuntários e lisos','Voluntários e lisos'], c:1, exp:'São estriados (aparência listrada ao microscópio) e voluntários, controlados conscientemente.'},
-      {e:'Ergonomia é o estudo que busca:', alt:['Aumentar a produção industrial a qualquer custo','Adaptar ambientes e tarefas às capacidades humanas, prevenindo lesões','Medir a força muscular','Substituir terapias por máquinas'], c:1, exp:'A ergonomia adapta o ambiente ao ser humano, reduzindo riscos de lesão.'},
-      {e:'Uma lesão medular pode causar perda de sensibilidade e movimento abaixo do ponto lesionado devido à:', alt:['Falha do sistema imunológico','Interrupção da condução de impulsos nervosos','Falha na circulação linfática','Problemas digestivos'], c:1, exp:'A medula conduz impulsos entre cérebro e corpo; sua lesão interrompe essa comunicação.'},
-      {e:'O uso de órteses e adaptações (como talheres adaptados) na Terapia Ocupacional tem como principal objetivo:', alt:['Estética','Promover autonomia e qualidade de vida ao paciente','Reduzir custos hospitalares','Substituir a fisioterapia'], c:1, exp:'Adaptações permitem que o paciente realize tarefas do cotidiano com mais independência.'}
-    ],
-    extra:[
-      {e:'A coluna vertebral humana é dividida nas regiões:', alt:['Cervical, torácica, lombar, sacral e coccígea','Superior e inferior apenas','Direita e esquerda','Anterior e posterior'], c:0, exp:'Essa divisão reflete diferentes curvaturas e funções de sustentação e mobilidade ao longo da coluna.'},
-      {e:'Atividades adaptadas para reabilitação motora após um AVC visam:', alt:['Curar definitivamente a lesão cerebral','Recuperar e estimular funções motoras e autonomia do paciente','Substituir a fisioterapia por completo','Apenas aliviar a dor'], c:1, exp:'A plasticidade cerebral permite, com estímulo adequado, reorganizar funções e recuperar parcialmente movimentos perdidos.'},
-      {e:'O desenho universal na arquitetura busca:', alt:['Criar espaços exclusivos para poucas pessoas','Tornar ambientes acessíveis a todas as pessoas','Reduzir custos de construção','Aumentar a decoração dos espaços'], c:1, exp:'Diferente de adaptações pontuais, o desenho universal já nasce pensado para atender à maior diversidade possível de usuários.'},
-      {e:'Os tendões conectam:', alt:['Osso a osso','Músculo a osso','Nervo a músculo','Pele a osso'], c:1, exp:'São estruturas de tecido conjuntivo resistente que transmitem a força da contração muscular ao osso, gerando movimento.'},
-      {e:'A capacidade de realizar atividades de vida diária, como se vestir e se alimentar sozinho, é foco central de qual profissão?', alt:['Nutrição','Terapia Ocupacional','Biomedicina','Enfermagem apenas'], c:1, exp:'A Terapia Ocupacional foca justamente na autonomia do paciente para realizar tarefas cotidianas com qualidade de vida.'},
-      {e:'A Lei Brasileira de Inclusão define pessoa com deficiência como aquela que possui impedimento de longo prazo que, em interação com barreiras, pode obstruir sua participação:', alt:['Apenas no trabalho','Plena e efetiva na sociedade em igualdade de condições','Somente na escola','Apenas no lazer'], c:1, exp:'A lei adota o modelo social de deficiência, considerando as barreiras do ambiente, não apenas a condição individual.'},
-      {e:'A norma ABNT NBR 9050 trata especificamente de:', alt:['Segurança do trabalho em fábricas','Acessibilidade a edificações, mobiliário, espaços e equipamentos urbanos','Currículos escolares','Normas de trânsito'], c:1, exp:'Essa norma técnica estabelece parâmetros para tornar ambientes acessíveis a pessoas com diferentes tipos de deficiência.'},
-      {e:'As articulações do tipo "dobradiça", como no cotovelo, permitem principalmente movimentos de:', alt:['Rotação completa','Flexão e extensão em um único plano','Nenhum movimento','Deslizamento lateral apenas'], c:1, exp:'Esse tipo de articulação funciona de forma semelhante a uma dobradiça de porta, restringindo o movimento a um eixo.'},
-      {e:'A tecnologia assistiva engloba recursos e serviços que têm como objetivo:', alt:['Substituir totalmente o cuidado humano','Ampliar habilidades funcionais e promover autonomia de pessoas com deficiência','Reduzir custos hospitalares apenas','Uso exclusivo em hospitais'], c:1, exp:'Cadeiras de rodas, comunicadores alternativos e softwares adaptados ampliam a participação e independência.'},
-      {e:'O desenvolvimento motor infantil normalmente segue uma sequência que vai de movimentos:', alt:['Finos para grosseiros','Cefalocaudais e proximodistais (da cabeça para os pés, do centro para as extremidades)','Aleatórios, sem padrão','Apenas voluntários desde o nascimento'], c:1, exp:'Essa progressão é observada, por exemplo, no controle da cabeça antes do tronco, e do tronco antes das mãos.'},
-      {e:'A LER/DORT está associada principalmente a:', alt:['Atividades de lazer ocasionais','Movimentos repetitivos, posturas inadequadas e sobrecarga no trabalho','Alimentação inadequada','Exposição solar excessiva'], c:1, exp:'A repetição de movimentos sem pausas adequadas pode lesar tendões, músculos e articulações ao longo do tempo.'},
-      {e:'Órteses, diferente de próteses, têm como função:', alt:['Substituir um membro ausente','Auxiliar, apoiar ou corrigir a função de um segmento corporal já existente','Realizar cirurgias','Medir sinais vitais'], c:1, exp:'Órteses, como talas e coletes, atuam sobre estruturas presentes no corpo, sem substituí-las.'},
-      {e:'Na avaliação funcional de um paciente, o termo "AVD" (Atividades de Vida Diária) refere-se a:', alt:['Exames de sangue de rotina','Tarefas básicas do cotidiano, como se alimentar, vestir-se e realizar higiene pessoal','Atividades apenas profissionais','Exercícios físicos intensos'], c:1, exp:'Essas atividades são centrais na avaliação e intervenção da Terapia Ocupacional, por impactarem diretamente a autonomia.'},
-      {e:'A ergonomia no ambiente de trabalho busca, entre outros objetivos:', alt:['Aumentar a jornada de trabalho','Adaptar mobiliário, ferramentas e rotinas para reduzir riscos de lesão e desconforto','Eliminar pausas durante o expediente','Padronizar todos os corpos da mesma forma'], c:1, exp:'Postos de trabalho mal adaptados aumentam o risco de lesões musculoesqueléticas a médio e longo prazo.'},
-      {e:'O envelhecimento populacional trouxe maior atenção da Terapia Ocupacional para:', alt:['Apenas crianças','Manutenção da funcionalidade e independência de idosos no cotidiano','Apenas atletas','Somente pacientes internados'], c:1, exp:'Com o aumento da expectativa de vida, preservar a autonomia funcional dos idosos se tornou uma demanda crescente da área.'},
-      {e:'A plasticidade neural, importante na reabilitação, refere-se à capacidade do sistema nervoso de:', alt:['Se regenerar completamente sempre','Reorganizar conexões neuronais, adaptando-se a lesões ou novos aprendizados','Permanecer inalterado ao longo da vida','Produzir novos ossos'], c:1, exp:'Essa reorganização permite, em certa medida, que outras áreas cerebrais assumam funções após uma lesão.'},
-      {e:'O uso de tecnologia assistiva para comunicação alternativa é indicado principalmente para pessoas que apresentam:', alt:['Apenas deficiência visual','Dificuldades significativas na fala ou linguagem','Apenas deficiência auditiva','Nenhuma limitação específica'], c:1, exp:'Recursos como pranchas de comunicação e aplicativos ajudam pessoas com dificuldades de fala a se expressarem.'},
-      {e:'A capacidade de um ambiente ser utilizado por pessoas com diferentes níveis de mobilidade, visão ou audição, sem necessidade de adaptações posteriores, define o conceito de:', alt:['Acessibilidade pontual','Desenho universal','Reabilitação','Ergonomia clínica'], c:1, exp:'O desenho universal antecipa a diversidade humana já na concepção do projeto, evitando adaptações corretivas futuras.'},
-      {e:'Os ossos longos, como o fêmur, têm como principal função:', alt:['Produção hormonal exclusiva','Sustentação e alavanca para o movimento, além de armazenar medula óssea','Apenas proteção de órgãos','Regulação da temperatura corporal'], c:1, exp:'Além do papel estrutural e de movimento, muitos ossos longos abrigam medula óssea vermelha, produtora de células sanguíneas.'},
-      {e:'A avaliação da amplitude de movimento articular (ADM) é importante na Terapia Ocupacional para:', alt:['Medir a pressão arterial','Identificar limitações funcionais e planejar intervenções específicas','Diagnosticar infecções','Avaliar a memória do paciente'], c:1, exp:'Conhecer a ADM de cada articulação orienta exercícios e adaptações necessárias para melhorar a função.'},
-      {e:'Uma cadeira de rodas adequadamente adaptada às medidas do usuário é um exemplo de:', alt:['Desenho arquitetônico apenas','Tecnologia assistiva personalizada','Procedimento cirúrgico','Exame diagnóstico'], c:1, exp:'A adaptação correta evita lesões posturais e amplia a autonomia de locomoção do usuário.'},
-      {e:'O estímulo sensorial na primeira infância é importante para o desenvolvimento porque:', alt:['Não influencia o desenvolvimento motor','Contribui para a formação de conexões neurais essenciais à aprendizagem e ao movimento','Só afeta a visão','É irrelevante antes dos 5 anos'], c:1, exp:'Experiências sensoriais variadas na infância favorecem conexões neurais fundamentais para habilidades motoras e cognitivas futuras.'},
-      {e:'Ao adaptar utensílios de cozinha para uma pessoa com dificuldades motoras nas mãos, a Terapia Ocupacional busca principalmente:', alt:['Estética do objeto','Facilitar a preensão e o uso funcional, promovendo independência','Reduzir o custo do utensílio','Substituir a necessidade de alimentação assistida sempre'], c:1, exp:'Pequenas adaptações no formato ou material de um objeto podem devolver autonomia significativa em tarefas simples.'},
-      {e:'A postura sentada prolongada e inadequada no ambiente escolar pode favorecer, a longo prazo:', alt:['Melhora da circulação','Alterações posturais e dores musculoesqueléticas','Aumento da altura','Nenhum efeito relevante'], c:1, exp:'Mobiliário mal ajustado ao corpo do estudante pode sobrecarregar a coluna e os músculos de sustentação.'},
-      {e:'Na reabilitação de um paciente após lesão de mão, exercícios de preensão e destreza fina visam principalmente recuperar:', alt:['A força respiratória','A funcionalidade e a coordenação motora fina da mão','A pressão arterial','A capacidade auditiva'], c:1, exp:'Atividades específicas ajudam a restaurar padrões de movimento necessários para tarefas como escrever ou manipular objetos.'},
-      {e:'O conceito de "barreira arquitetônica" refere-se a:', alt:['Qualquer parede de um prédio','Obstáculos físicos que impedem ou dificultam a circulação e o uso de espaços por pessoas com deficiência','Decoração de interiores','Tipo de material de construção'], c:1, exp:'Escadas sem rampas alternativas e portas estreitas são exemplos comuns de barreiras arquitetônicas.'},
-      {e:'A articulação do quadril, do tipo esférica (bola e soquete), permite:', alt:['Movimento em um único plano','Grande amplitude de movimento em múltiplos planos','Nenhum tipo de rotação','Apenas movimentos de deslizamento'], c:1, exp:'Esse tipo de articulação permite flexão, extensão, rotação e movimentos circulares, essenciais para caminhar e correr.'},
-      {e:'No contexto da saúde mental, a Terapia Ocupacional pode atuar por meio de atividades que promovam:', alt:['Isolamento social como forma de descanso','Engajamento em atividades significativas que fortaleçam vínculos e rotina','Eliminação total de responsabilidades','Apenas repouso absoluto'], c:1, exp:'Rotinas e atividades com propósito ajudam na estruturação emocional e na reintegração social do paciente.'},
-      {e:'Ao avaliar o ambiente domiciliar de um idoso com risco de queda, a Terapia Ocupacional costuma recomendar:', alt:['Remoção de todos os móveis','Fixação de tapetes, barras de apoio e boa iluminação','Elevação excessiva do piso','Redução da iluminação para poupar energia'], c:1, exp:'Pequenas modificações ambientais reduzem significativamente o risco de queda em pessoas com mobilidade reduzida.'},
-      {e:'Em crianças com atraso no desenvolvimento motor, a intervenção precoce da Terapia Ocupacional busca principalmente:', alt:['Acelerar apenas o crescimento ósseo','Estimular habilidades motoras e funcionais no período de maior plasticidade neural','Substituir a educação escolar','Isolar a criança de outras atividades'], c:1, exp:'Intervir precocemente aproveita a maior capacidade de adaptação do sistema nervoso ainda em desenvolvimento.'}
-    ]
-  },
-  {
-    id:'psicologia', colegio:'Sociologia, Filosofia', faculdade:'Psicologia do Desenvolvimento, Psicologia Social', horario:'14h00 – 15h00', local:'Consultório de Psicologia', profissao:'Psicólogo(a)', icone:'🧠', selo:'Selo da Psicologia',
-    caso:{ paciente:'L. B., 17 anos', queixa:'Ansiedade intensa antes das provas e isolamento social', narrativa:'A família trouxe o paciente ao consultório. Você conduz uma escuta cuidadosa para compreender o quadro e orientar os próximos passos.' },
-    perguntas:[
-      {e:'Segundo a psicologia do desenvolvimento, a adolescência é marcada principalmente por:', alt:['Estabilidade emocional total','Formação de identidade e mudanças biopsicossociais','Ausência de conflitos sociais','Regressão cognitiva'], c:1, exp:'É uma fase de intensa construção da identidade, com mudanças físicas, emocionais e sociais.'},
-      {e:'A definição de saúde da OMS envolve:', alt:['Apenas a ausência de doença','Bem-estar físico, mental e social, e não só ausência de doença','Apenas equilíbrio hormonal','Capacidade de trabalhar sem descanso'], c:1, exp:'A OMS define saúde de forma ampla, incluindo dimensões físicas, mentais e sociais.'},
-      {e:'O estigma social relacionado a transtornos mentais pode levar a:', alt:['Melhor acesso a tratamento','Isolamento e dificuldade em buscar ajuda','Cura espontânea','Nenhum efeito relevante'], c:1, exp:'O estigma frequentemente afasta as pessoas do tratamento, por medo de julgamento.'},
-      {e:'Segundo teorias sociológicas, a "socialização" é o processo pelo qual:', alt:['O indivíduo nasce com valores prontos','O indivíduo internaliza normas e valores da sociedade em que vive','Apenas escolas educam pessoas','Ocorre somente na infância'], c:1, exp:'A socialização é contínua, e ocorre pela família, escola, mídia e outros grupos sociais.'},
-      {e:'O burnout é caracterizado por:', alt:['Excesso de energia no trabalho','Esgotamento físico e emocional por estresse crônico no trabalho','Uma doença genética','Uma alergia ocupacional'], c:1, exp:'É uma síndrome ligada ao estresse crônico não gerenciado no ambiente de trabalho.'},
-      {e:'A empatia, essencial na prática clínica, pode ser definida como:', alt:['Sentir pena de alguém','Capacidade de compreender e se colocar no lugar do outro','Concordar sempre com o paciente','Ignorar as emoções do paciente'], c:1, exp:'Empatia é compreender a perspectiva e os sentimentos do outro, sem necessariamente concordar.'}
-    ],
-    extra:[
-      {e:'Segundo Piaget, o desenvolvimento cognitivo humano ocorre em:', alt:['Um único estágio fixo desde o nascimento','Estágios sucessivos, conforme a idade','Apenas na fase adulta','Forma aleatória, sem padrão'], c:1, exp:'Cada estágio corresponde a formas específicas de pensar e compreender o mundo, evoluindo com a maturação e as experiências.'},
-      {e:'A ansiedade, quando persistente e intensa, pode ser classificada como:', alt:['Sempre um sinal de fraqueza pessoal','Um transtorno de saúde mental que pode ser tratado','Algo que não afeta o corpo','Contagiosa como um vírus'], c:1, exp:'Reconhecer a ansiedade como condição de saúde mental, e não como fraqueza, favorece a busca por tratamento adequado.'},
-      {e:'O termo "resiliência" em psicologia refere-se a:', alt:['Fragilidade emocional constante','Capacidade de se adaptar e se recuperar diante de adversidades','Ausência total de emoções','Memória de longo prazo'], c:1, exp:'Não significa ausência de sofrimento, mas a capacidade de enfrentar e se recuperar de situações difíceis.'},
-      {e:'A escuta ativa, essencial no atendimento psicológico, envolve:', alt:['Interromper o paciente para dar conselhos rápidos','Prestar atenção genuína, sem julgamentos','Apenas concordar com tudo','Ignorar a linguagem corporal'], c:1, exp:'Essa prática fortalece o vínculo e permite compreender de forma mais precisa a experiência do outro.'},
-      {e:'O preconceito relacionado à saúde mental muitas vezes tem origem em:', alt:['Fatores biológicos exclusivamente','Construções sociais e culturais, muitas vezes por desinformação','Leis específicas','Diagnósticos médicos'], c:1, exp:'A falta de informação alimenta estigmas que afastam pessoas do tratamento necessário.'},
-      {e:'Segundo a pirâmide de Maslow, as necessidades fisiológicas (como alimentação e sono) estão localizadas:', alt:['No topo da pirâmide','Na base da pirâmide, como necessidades mais básicas','Fora da pirâmide','No meio, junto à autorrealização'], c:1, exp:'Maslow propôs que necessidades básicas precisam ser satisfeitas antes que a pessoa busque necessidades mais elevadas.'},
-      {e:'O processo de socialização primária ocorre principalmente através:', alt:['Da mídia e redes sociais','Da família, nos primeiros anos de vida','Somente da escola','Do ambiente de trabalho'], c:1, exp:'É na família que a criança tem os primeiros contatos com normas, valores e comportamentos sociais.'},
-      {e:'O bullying escolar pode ser definido como:', alt:['Uma brincadeira saudável entre colegas','Comportamento agressivo repetitivo, com desequilíbrio de poder entre agressor e vítima','Um conflito pontual resolvido rapidamente','Uma prática pedagógica formal'], c:1, exp:'A repetição e o desequilíbrio de poder diferenciam o bullying de um conflito isolado comum entre crianças e adolescentes.'},
-      {e:'A Terapia Cognitivo-Comportamental (TCC) trabalha principalmente a relação entre:', alt:['Apenas sonhos e inconsciente','Pensamentos, emoções e comportamentos','Genes e hereditariedade','Apenas relações familiares passadas'], c:1, exp:'Essa abordagem busca identificar padrões de pensamento que influenciam emoções e comportamentos, propondo estratégias de mudança.'},
-      {e:'O luto, processo psicológico frente a uma perda significativa, é caracterizado por:', alt:['Uma única reação padronizada em todas as pessoas','Um processo pessoal, com fases que podem variar em intensidade e duração','Algo que deve ser resolvido em poucos dias','Ausência total de emoções'], c:1, exp:'Embora existam modelos teóricos sobre fases do luto, a vivência real varia bastante entre indivíduos e contextos.'},
-      {e:'A autoestima pode ser definida como:', alt:['A opinião que os outros têm sobre alguém','A avaliação e o valor que a pessoa atribui a si mesma','Um traço fixo e imutável desde o nascimento','Sinônimo de arrogância'], c:1, exp:'A autoestima envolve como a pessoa percebe e valoriza suas próprias qualidades, capacidades e limitações.'},
-      {e:'A comunicação não-violenta busca, entre seus princípios, expressar:', alt:['Julgamentos diretos sobre o outro','Sentimentos e necessidades de forma clara, sem acusações','Apenas ordens objetivas','Crítica constante ao comportamento alheio'], c:1, exp:'Essa abordagem propõe substituir julgamentos por observações e necessidades, reduzindo conflitos na comunicação.'},
-      {e:'Segundo Vigotsky, a aprendizagem é fortemente influenciada:', alt:['Apenas por fatores biológicos','Pela interação social e mediação cultural','Exclusivamente por instintos','Pela ausência de interação com outros'], c:1, exp:'Para Vigotsky, o desenvolvimento cognitivo depende de trocas sociais e do suporte de pessoas mais experientes.'},
-      {e:'O estigma associado a transtornos mentais frequentemente leva a comportamentos de:', alt:['Acolhimento imediato','Exclusão, julgamento e discriminação da pessoa afetada','Empatia automática','Nenhuma alteração social'], c:1, exp:'Preconceitos e falta de informação sobre saúde mental favorecem atitudes discriminatórias que dificultam a inclusão social.'},
-      {e:'O conceito sociológico de "instituição social" refere-se a:', alt:['Apenas prédios governamentais','Estruturas duradouras, como família, escola e religião, que organizam a vida social','Somente empresas privadas','Qualquer grupo de amigos'], c:1, exp:'Instituições sociais moldam comportamentos e valores compartilhados por um grupo ao longo do tempo.'},
-      {e:'O burnout, reconhecido pela OMS como fenômeno ocupacional, é caracterizado principalmente por três dimensões:', alt:['Felicidade, motivação e produtividade','Exaustão, cinismo/despersonalização e baixa realização profissional','Apenas cansaço físico','Excesso de sono e apetite'], c:1, exp:'Essas três dimensões descrevem o quadro de esgotamento relacionado a estresse crônico não gerenciado no trabalho.'},
-      {e:'A adolescência, segundo diversas teorias do desenvolvimento, é marcada pela busca por:', alt:['Total dependência dos pais','Formação de identidade própria e maior autonomia','Ausência de qualquer conflito','Retorno a comportamentos infantis'], c:1, exp:'É um período de intensa construção da identidade pessoal, com busca por autonomia em relação à família.'},
-      {e:'A escuta empática, diferente da simples audição, envolve:', alt:['Ouvir apenas palavras, sem atenção a emoções','Compreender também os sentimentos e o contexto por trás da fala do outro','Interromper para opinar rapidamente','Ignorar a linguagem corporal'], c:1, exp:'A escuta empática considera tanto o conteúdo verbal quanto as emoções expressas por quem fala.'},
-      {e:'Grupos sociais de pertencimento, como turmas de amigos na adolescência, influenciam fortemente:', alt:['Apenas o desempenho escolar','A construção da identidade e o senso de pertencimento do indivíduo','Somente escolhas alimentares','Nada relevante ao desenvolvimento'], c:1, exp:'A convivência com pares nessa fase contribui significativamente para a formação de valores, comportamentos e autoimagem.'},
-      {e:'O conceito de "resiliência psicológica" NÃO significa:', alt:['Recuperar-se de adversidades','Nunca sentir dor emocional ou dificuldade','Adaptar-se positivamente diante de desafios','Manter algum grau de funcionamento em crises'], c:1, exp:'Resiliência não é ausência de sofrimento, mas a capacidade de enfrentá-lo e seguir se adaptando.'},
-      {e:'A ansiedade normal, adaptativa, se diferencia da ansiedade patológica principalmente por:', alt:['Nunca causar nenhum sintoma físico','Sua intensidade, duração e impacto na vida cotidiana da pessoa','Ocorrer apenas em crianças','Ser sempre idêntica em todas as pessoas'], c:1, exp:'Certo nível de ansiedade é esperado e até útil; ela se torna um problema quando é desproporcional e persistente.'},
-      {e:'A empatia, importante nas relações de cuidado, difere da simpatia porque:', alt:['É sinônimo de sentir pena','Envolve compreender a perspectiva do outro, sem necessariamente sentir o mesmo','É impossível de se desenvolver','Envolve concordar com todas as opiniões do outro'], c:1, exp:'A empatia é a capacidade de compreender genuinamente o que o outro sente, sem que isso signifique concordância ou pena.'},
-      {e:'Um dos fatores de proteção mais estudados contra dificuldades emocionais na infância é:', alt:['O isolamento social precoce','Vínculos afetivos seguros com cuidadores','A ausência total de regras','A exposição precoce a situações de risco'], c:1, exp:'Relações de apego seguro na infância estão associadas a melhor regulação emocional ao longo da vida.'},
-      {e:'A psicologia escolar atua, entre outras frentes, para:', alt:['Substituir o papel do professor em sala','Promover o bem-estar emocional e a aprendizagem dos estudantes no ambiente escolar','Aplicar apenas provas psicológicas','Cuidar exclusivamente da estrutura física da escola'], c:1, exp:'O psicólogo escolar contribui para identificar e apoiar questões emocionais, sociais e de aprendizagem no contexto educacional.'},
-      {e:'A Psicologia Positiva, campo de estudo mais recente, tem como foco principal:', alt:['Apenas tratar transtornos mentais graves','Estudar fatores que promovem bem-estar, virtudes e qualidade de vida','Substituir a Psicanálise','Analisar apenas o comportamento animal'], c:1, exp:'Diferente de abordagens focadas só na patologia, a psicologia positiva estuda o que contribui para o bem-estar humano.'},
-      {e:'A teoria do apego, desenvolvida por John Bowlby, explica principalmente:', alt:['Como se formam vínculos afetivos entre a criança e seus cuidadores primários','Como se desenvolve a linguagem','Como funciona a memória de longo prazo','Como ocorre o desenvolvimento motor'], c:0, exp:'O apego seguro na infância é associado a relações mais saudáveis e maior segurança emocional na vida adulta.'},
-      {e:'Um ambiente escolar inclusivo, do ponto de vista psicológico, busca principalmente:', alt:['Padronizar todos os alunos da mesma forma','Acolher a diversidade de necessidades emocionais, sociais e de aprendizagem dos estudantes','Excluir alunos com maior dificuldade','Focar apenas em notas e desempenho'], c:1, exp:'A inclusão considera as diferenças individuais como parte natural do ambiente escolar, promovendo pertencimento a todos.'},
-      {e:'A motivação intrínseca, diferente da extrínseca, está relacionada a:', alt:['Realizar uma atividade por recompensas externas, como dinheiro ou prêmios','Realizar uma atividade pelo interesse e satisfação pessoal que ela proporciona','Fazer algo apenas por obrigação','Evitar qualquer tipo de esforço'], c:1, exp:'Quando a motivação é intrínseca, a própria atividade é fonte de satisfação, independente de recompensas externas.'},
-      {e:'O fenômeno da "pressão de grupo", comum na adolescência, pode influenciar:', alt:['Apenas escolhas de vestuário','Comportamentos, decisões e valores do indivíduo, para se adequar ao grupo','Apenas o desempenho escolar','Nada relevante ao comportamento'], c:1, exp:'O desejo de aceitação social pode levar adolescentes a adotarem comportamentos do grupo, mesmo contrários às próprias convicções.'},
-      {e:'A psicoeducação, prática comum em saúde mental, tem como objetivo principal:', alt:['Substituir o tratamento psicológico ou médico','Informar o paciente e sua família sobre a condição de saúde mental, favorecendo o tratamento','Diagnosticar transtornos sem avaliação profissional','Reduzir o acesso à informação'], c:1, exp:'Entender a própria condição de saúde mental ajuda o paciente e a família a lidar melhor com o tratamento e reduzir estigmas.'}
-    ]
-  }
-];
-
-/* ======================= ESTADO ======================= */
-let estado = {
-  tela:'cadastro',
-  aluno:{nome:'', telefone:'', email:'', curso:'', colegio:'', serie:'2º ano'},
-  moduloAtual:0,
-  perguntaAtual:0,
-  respondida:false,
-  score:0,
-  estabilidade:50,
-  acertosModulo:0,
-  selos:[],
-  modulosConcluidos:[],
-  ecgAlerta:'',
-};
-
-/* ======================= UTIL ======================= */
-function pulsarECG(tipo){
-  estado.ecgAlerta = tipo;
-  render();
-  setTimeout(()=>{ estado.ecgAlerta=''; render(); }, 900);
-}
-
-function gerarPDFModulo(modulo){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  let y = 20;
-  doc.setTextColor(224,26,85);
-  doc.setFont('helvetica','bolditalic'); doc.setFontSize(15);
-  doc.text('afya', 15, y); y+=8;
-  doc.setTextColor(20,20,20);
-  doc.setFontSize(16);
-  doc.text('Treino em casa — ' + modulo.profissao, 15, y); y+=8;
-  doc.setFontSize(11); doc.setFont('helvetica','normal');
-  doc.text('Plantão: Vidas em Jogo', 15, y); y+=10;
-  doc.setDrawColor(224,26,85); doc.line(15,y,195,y); y+=10;
-
-  modulo.extra.forEach((q, i)=>{
-    if(y > 250){ doc.addPage(); y = 20; }
-    doc.setFont('helvetica','bold'); doc.setFontSize(12);
-    const linhasE = doc.splitTextToSize((i+1)+'. '+q.e, 180);
-    doc.text(linhasE, 15, y); y += linhasE.length*6 + 2;
-    doc.setFont('helvetica','normal'); doc.setFontSize(11);
-    ['A','B','C','D'].forEach((letra, idx)=>{
-      const linhasAlt = doc.splitTextToSize(letra+') '+q.alt[idx], 175);
-      doc.text(linhasAlt, 20, y); y += linhasAlt.length*5.5;
-    });
-    y += 6;
-  });
-
-  doc.addPage(); y = 20;
-  doc.setFont('helvetica','bold'); doc.setFontSize(14);
-  doc.text('Gabarito e justificativas', 15, y); y += 10;
-  doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
-  modulo.extra.forEach((q, i)=>{
-    if(y > 268){ doc.addPage(); y = 20; }
-    const linha = (i+1)+'. Resposta: '+['A','B','C','D'][q.c]+'. '+(q.exp || '');
-    const linhas = doc.splitTextToSize(linha, 180);
-    doc.text(linhas, 15, y); y += linhas.length*5.2 + 3.5;
-  });
-
-  doc.save('treino-'+modulo.id+'.pdf');
-}
-
-function gerarPDFFinal(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  let y = 20;
-  doc.setTextColor(224,26,85);
-  doc.setFont('helvetica','bolditalic'); doc.setFontSize(15);
-  doc.text('afya', 15, y); y+=8;
-  doc.setTextColor(20,20,20);
-  doc.setFontSize(17);
-  doc.text('Caderno de Treino Completo', 15, y); y+=8;
-  doc.setFontSize(11); doc.setFont('helvetica','normal');
-  doc.text('Plantão: Vidas em Jogo · ' + estado.aluno.nome, 15, y); y+=10;
-  doc.setDrawColor(224,26,85); doc.line(15,y,195,y); y+=10;
-
-  MODULOS.forEach(modulo=>{
-    if(y > 240){ doc.addPage(); y = 20; }
-    doc.setFont('helvetica','bold'); doc.setFontSize(13);
-    doc.text(modulo.profissao, 15, y); y+=8;
-    modulo.extra.forEach((q, i)=>{
-      if(y > 255){ doc.addPage(); y = 20; }
-      doc.setFont('helvetica','bold'); doc.setFontSize(11);
-      const linhasE = doc.splitTextToSize((i+1)+'. '+q.e, 180);
-      doc.text(linhasE, 15, y); y += linhasE.length*5.5 + 1;
-      doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
-      ['A','B','C','D'].forEach((letra, idx)=>{
-        const linhasAlt = doc.splitTextToSize(letra+') '+q.alt[idx], 175);
-        doc.text(linhasAlt, 20, y); y += linhasAlt.length*5;
-      });
-      y += 4;
-    });
-    y += 4;
-  });
-
-  doc.addPage(); y=20;
-  doc.setFont('helvetica','bold'); doc.setFontSize(14);
-  doc.text('Gabarito geral e justificativas', 15, y); y+=10;
-  MODULOS.forEach(modulo=>{
-    if(y > 260){ doc.addPage(); y = 20; }
-    doc.setFont('helvetica','bold'); doc.setFontSize(12);
-    doc.text(modulo.profissao, 15, y); y+=7;
-    doc.setFont('helvetica','normal'); doc.setFontSize(10);
-    modulo.extra.forEach((q,i)=>{
-      if(y > 272){ doc.addPage(); y = 20; }
-      const linha = (i+1)+'. Resposta: '+['A','B','C','D'][q.c]+'. '+(q.exp || '');
-      const linhas = doc.splitTextToSize(linha, 180);
-      doc.text(linhas, 15, y); y += linhas.length*4.8 + 2.5;
-    });
-    y += 4;
-  });
-
-  doc.save('caderno-de-treino-completo.pdf');
-}
-
-/* ======================= RENDER ======================= */
-function render(){
-  const app = document.getElementById('app');
-  const alertaECG = estado.ecgAlerta === 'ok' ? '' : (estado.ecgAlerta==='erro' ? 'alert' : '');
-  const monitor = estado.tela === 'cadastro' ? '' : `
-    <div class="monitor">
-      <div class="crachá">
-        <span class="marca-mini">afya</span>
-        <span class="nome">${estado.aluno.nome || 'Estudante'}</span>
-        <span class="funcao">${estado.tela==='fase' ? MODULOS[estado.moduloAtual].profissao : 'Plantão em curso'}</span>
-      </div>
-      <div class="ecg-wrap">
-        <svg viewBox="0 0 200 44" preserveAspectRatio="none">
-          <path class="ecg-line ${alertaECG}" d="M0,22 L20,22 L26,8 L32,36 L38,22 L60,22 L66,14 L72,30 L78,22 L100,22 L106,8 L112,36 L118,22 L140,22 L146,14 L152,30 L158,22 L180,22 L186,8 L192,36 L198,22 L200,22"/>
-          <path class="ecg-line ${alertaECG}" d="M100,22 L120,22 L126,8 L132,36 L138,22 L160,22 L166,14 L172,30 L178,22 L200,22 L206,8 L212,36 L218,22 L240,22 L246,14 L252,30 L258,22 L280,22 L286,8 L292,36 L298,22 L300,22" transform="translate(-100,0)"/>
-        </svg>
-      </div>
-      <div class="vitais">
-        <div class="stat"><div class="val estab-val ${estado.estabilidade<40?'baixa':''}">${estado.estabilidade}%</div><div class="lbl">Estabilidade</div></div>
-        <div class="stat"><div class="val">${estado.score}</div><div class="lbl">Pontos</div></div>
-      </div>
-    </div>`;
-
-  let conteudo = '';
-  if(estado.tela === 'cadastro') conteudo = telaCadastro();
-  else if(estado.tela === 'mapa') conteudo = telaMapa();
-  else if(estado.tela === 'fase') conteudo = telaFase();
-  else if(estado.tela === 'resultadoFase') conteudo = telaResultadoFase();
-  else if(estado.tela === 'final') conteudo = telaFinal();
-
-  app.innerHTML = monitor + conteudo + `<footer class="creditos">Plantão: Vidas em Jogo — simulador educativo para estudantes de colégios parceiros AFYA</footer>`;
-}
-
-function telaCadastro(){
-  return `
-    <div class="poster-hero" style="margin-top:40px;">
-      <div class="script">Afya</div>
-      <h1>Plantão<br>Vidas em Jogo</h1>
-      <div class="sub">Simulador de plantão hospitalar para estudantes de colégios parceiros. Vista o crachá, atenda casos reais e treine para o vestibular.</div>
-      <div class="poster-badges">
-        <div class="poster-badge"><span class="ic azul">🎓</span><span class="lb">6 profissões<br>da saúde</span></div>
-        <div class="poster-badge"><span class="ic">🏆</span><span class="lb">Selos por<br>plantão</span></div>
-        <div class="poster-badge"><span class="ic">📄</span><span class="lb">PDF de treino<br>por módulo</span></div>
-      </div>
-    </div>
-    <div class="card" style="max-width:480px; margin-left:auto; margin-right:auto;">
-      <div class="eyebrow">Cadastro do plantonista</div>
-      <p class="muted">Preencha seus dados para gerar seu crachá e começar o turno.</p>
-      <label for="nome">Seu nome</label>
-      <input type="text" id="nome" placeholder="Como você quer ser chamado no crachá">
-      <label for="telefone">Telefone (com DDD)</label>
-      <input type="text" id="telefone" placeholder="(00) 00000-0000" inputmode="tel">
-      <label for="email">E-mail</label>
-      <input type="text" id="email" placeholder="seu@email.com" inputmode="email">
-      <label for="colegio">Colégio parceiro</label>
-      <input type="text" id="colegio" placeholder="Nome do seu colégio">
-      <label for="serie">Série</label>
-      <select id="serie">
-        <option value="2º ano">2º ano do Ensino Médio</option>
-        <option value="3º ano">3º ano do Ensino Médio</option>
-      </select>
-      <label for="curso">Curso de interesse</label>
-      <select id="curso">
-        <option value="Nutrição">Nutrição</option>
-        <option value="Enfermagem">Enfermagem</option>
-        <option value="Biomedicina">Biomedicina</option>
-        <option value="Medicina">Medicina</option>
-        <option value="Terapia Ocupacional">Terapia Ocupacional</option>
-        <option value="Psicologia">Psicologia</option>
-        <option value="Ainda não sei">Ainda não sei</option>
-      </select>
-      <div class="row">
-        <button onclick="iniciarPlantao()">Vestir o crachá e começar o plantão</button>
-      </div>
-    </div>`;
-}
-
-function iniciarPlantao(){
-  const nome = document.getElementById('nome').value.trim();
-  const telefone = document.getElementById('telefone').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const colegio = document.getElementById('colegio').value.trim();
-  const serie = document.getElementById('serie').value;
-  const curso = document.getElementById('curso').value;
-  if(!nome || !telefone || !email || !colegio){
-    alert('Preencha nome, telefone, e-mail e colégio para gerar o crachá.');
-    return;
-  }
-  if(!email.includes('@') || !email.includes('.')){
-    alert('Digite um e-mail válido.');
-    return;
-  }
-  estado.aluno = {nome, telefone, email, curso, colegio, serie};
-  enviarLeadParaN8N(estado.aluno);
-  estado.tela = 'mapa';
-  render();
-}
-
-function telaMapa(){
-  const linhas = MODULOS.map((m, i)=>{
-    const concluido = estado.modulosConcluidos.includes(m.id);
-    const classe = concluido ? 'feito' : 'disponivel';
-    const selo = estado.selos.includes(m.id) ? `<span class="selo-mini">${m.icone}</span>` : '';
-    const botao = concluido
-      ? `<button class="turno-btn secundario" onclick="entrarNoModulo(${i})">Revisar plantão ${selo}</button>`
-      : `<button class="turno-btn" onclick="entrarNoModulo(${i})">Entrar no plantão</button>`;
-    return `
-      <div class="turno ${classe}">
-        <div class="hora">${m.horario}</div>
-        <div class="turno-info">
-          <div class="profissao">${m.icone} ${m.profissao}</div>
-          <div class="local">${m.local}</div>
-          <div class="disciplinas">
-            <span class="disciplinas-rotulo">No colégio:</span>
-            ${m.colegio.split(', ').map(d=>`<span class="disciplina-tag">${d}</span>`).join('')}
-          </div>
-          <div class="disciplinas">
-            <span class="disciplinas-rotulo">Na faculdade:</span>
-            ${m.faculdade.split(', ').map(d=>`<span class="disciplina-tag faculdade">${d}</span>`).join('')}
-          </div>
+    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white font-bold tracking-wider text-xl">
+                    DH
+                </div>
+                <span class="text-xl font-bold tracking-tight text-white">DHARMA</span>
+            </div>
+            <nav class="hidden md:flex space-x-8 text-sm font-medium">
+                <a href="#" class="text-indigo-400 border-b-2 border-indigo-500 px-1 pt-1 pb-4">Dashboard</a>
+                <a href="#" class="text-gray-300 hover:text-white transition px-1 pt-1 pb-4">Workflows</a>
+                <a href="#" class="text-gray-300 hover:text-white transition px-1 pt-1 pb-4">Leads</a>
+                <a href="#" class="text-gray-300 hover:text-white transition px-1 pt-1 pb-4">Configurações</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <button class="text-gray-400 hover:text-white relative p-1 rounded-full focus:outline-none">
+                    <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-gray-800"></span>
+                    <i class="fa-regular fa-bell text-xl"></i>
+                </button>
+                <div class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white">
+                    TM
+                </div>
+            </div>
         </div>
-        ${botao}
-      </div>`;
-  }).join('');
+    </header>
 
-  return `
-    <div class="card">
-      <div class="eyebrow">Escala de Plantão · ${estado.aluno.serie}</div>
-      <h2>Bem-vindo(a) ao seu turno, ${estado.aluno.nome}</h2>
-      <p class="muted">Escolha por qual especialidade quer começar. Cada plantão traz um caso, suas disciplinas de estudo e um atendimento com decisões rápidas — a saúde do paciente depende do seu conhecimento.</p>
-      <div class="escala">${linhas}</div>
-    </div>`;
-}
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full">
+        <div class="mb-8">
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">Painel de Automação</h1>
+            <p class="mt-2 text-sm text-gray-400">Monitore seus fluxos de integração, conversões e métricas em tempo real.</p>
+        </div>
 
-function entrarNoModulo(i){
-  estado.moduloAtual = i;
-  estado.perguntaAtual = 0;
-  estado.acertosModulo = 0;
-  estado.respondida = false;
-  estado.tela = 'fase';
-  render();
-}
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+            <div class="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700 p-5">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm font-medium text-gray-400 truncate">Total de Leads (Mês)</div>
+                    <div class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg"><i class="fa-solid fa-users"></i></div>
+                </div>
+                <div class="mt-2 text-3xl font-semibold text-white">1,248</div>
+                <div class="mt-2 text-xs text-green-400 flex items-center">
+                    <i class="fa-solid fa-arrow-up mr-1"></i> 12% em relação à semana passada
+                </div>
+            </div>
 
-function telaFase(){
-  const modulo = MODULOS[estado.moduloAtual];
-  const pergunta = modulo.perguntas[estado.perguntaAtual];
-  const letras = ['A','B','C','D'];
+            <div class="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700 p-5">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm font-medium text-gray-400 truncate">Disparos WhatsApp</div>
+                    <div class="p-2 bg-green-500/10 text-green-400 rounded-lg"><i class="fa-brands fa-whatsapp text-lg"></i></div>
+                </div>
+                <div class="mt-2 text-3xl font-semibold text-white">8,432</div>
+                <div class="mt-2 text-xs text-green-400 flex items-center">
+                    <i class="fa-solid fa-arrow-up mr-1"></i> 98.4% de taxa de entrega
+                </div>
+            </div>
 
-  const alternativas = pergunta.alt.map((texto, idx)=>{
-    let classe = '';
-    if(estado.respondida){
-      if(idx === pergunta.c) classe = 'correta';
-      else if(idx === estado.escolhaAtual) classe = 'errada';
-    }
-    return `<button class="alternativa ${classe}" ${estado.respondida?'disabled':''} onclick="responder(${idx})">${letras[idx]}) ${texto}</button>`;
-  }).join('');
+            <div class="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700 p-5">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm font-medium text-gray-400 truncate">Workflows Ativos</div>
+                    <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg"><i class="fa-solid fa-circle-nodes"></i></div>
+                </div>
+                <div class="mt-2 text-3xl font-semibold text-white">12</div>
+                <div class="mt-2 text-xs text-gray-400 flex items-center">
+                    <span class="h-2 w-2 rounded-full bg-green-400 inline-block mr-2"></span> Todos operando normalmente
+                </div>
+            </div>
 
-  const feedback = estado.respondida ? `
-    <div class="feedback ${estado.acertouAtual?'ok':'no'}">
-      <b>${estado.acertouAtual ? 'Conduta correta.' : 'Conduta revisada.'}</b> ${pergunta.exp}
-    </div>
-    <div class="row">
-      <button onclick="proximaPergunta()">${estado.perguntaAtual < modulo.perguntas.length-1 ? 'Próximo atendimento' : 'Encerrar turno'}</button>
-    </div>` : '';
+            <div class="bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-700 p-5">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm font-medium text-gray-400 truncate">Taxa de Conversão</div>
+                    <div class="p-2 bg-rose-500/10 text-rose-400 rounded-lg"><i class="fa-solid fa-chart-line"></i></div>
+                </div>
+                <div class="mt-2 text-3xl font-semibold text-white">24.3%</div>
+                <div class="mt-2 text-xs text-green-400 flex items-center">
+                    <i class="fa-solid fa-arrow-up mr-1"></i> +2.1% este mês
+                </div>
+            </div>
+        </div>
 
-  return `
-    <div class="card">
-      <div class="eyebrow">${modulo.horario} · ${modulo.local}</div>
-      <h2>${modulo.icone} Você é o(a) ${modulo.profissao} de plantão</h2>
-      <div class="prontuario">
-        <div class="campo"><span>Paciente:</span> <b>${modulo.caso.paciente}</b></div>
-        <div class="campo"><span>Queixa:</span> <b>${modulo.caso.queixa}</b></div>
-        <p style="margin:10px 0 0; font-size:14px;">${modulo.caso.narrativa}</p>
-      </div>
-      <div class="progresso-q">Atendimento ${estado.perguntaAtual+1} de ${modulo.perguntas.length}</div>
-      <div class="enunciado">${pergunta.e}</div>
-      ${alternativas}
-      ${feedback}
-    </div>`;
-}
+        <div class="bg-gray-800 shadow rounded-lg border border-gray-700">
+            <div class="px-6 py-5 border-b border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-medium leading-6 text-white">Últimas Execuções de Webhooks</h3>
+                    <p class="mt-1 text-sm text-gray-400">Log detalhado das automações e integrações n8n / Airtable recentes.</p>
+                </div>
+                <button class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none transition">
+                    <i class="fa-solid fa-rotate mr-2"></i> Atualizar Logs
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-750">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Workflow</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Origem / Destino</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Data/Hora</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700 bg-gray-800">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Inbound Lead Capture</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">n8n &rarr; Airtable CRM</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">Hoje, 10:25 AM</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900/50 text-green-300 border border-green-500/30">Sucesso</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Régua de Notificação WhatsApp</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">Z-API &rarr; Cliente</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">Hoje, 10:12 AM</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900/50 text-green-300 border border-green-500/30">Sucesso</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Sincronização de Catálogo</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">E-commerce &rarr; Banco de Dados</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">Ontem, 23:45 PM</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-900/50 text-amber-300 border border-amber-500/30">Pendente</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 
-function responder(idx){
-  if(estado.respondida) return;
-  const modulo = MODULOS[estado.moduloAtual];
-  const pergunta = modulo.perguntas[estado.perguntaAtual];
-  const acertou = idx === pergunta.c;
-  estado.respondida = true;
-  estado.escolhaAtual = idx;
-  estado.acertouAtual = acertou;
+    <footer class="bg-gray-800 border-t border-gray-700 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-sm text-gray-400 gap-4">
+            <div>&copy; 2026 Dharma. Todos os direitos reservados.</div>
+            <div class="flex space-x-6">
+                <a href="#" class="hover:text-white transition"><i class="fa-brands fa-github text-lg"></i></a>
+                <a href="#" class="hover:text-white transition"><i class="fa-solid fa-envelope text-lg"></i></a>
+            </div>
+        </div>
+    </footer>
 
-  if(acertou){
-    estado.score += 10;
-    estado.acertosModulo += 1;
-    estado.estabilidade = Math.min(100, estado.estabilidade + 15);
-    pulsarECG('ok');
-  } else {
-    estado.estabilidade = Math.max(0, estado.estabilidade - 10);
-    pulsarECG('erro');
-  }
-  render();
-}
-
-function proximaPergunta(){
-  const modulo = MODULOS[estado.moduloAtual];
-  if(estado.perguntaAtual < modulo.perguntas.length - 1){
-    estado.perguntaAtual += 1;
-    estado.respondida = false;
-    render();
-  } else {
-    if(estado.estabilidade >= 60 && !estado.selos.includes(modulo.id)){
-      estado.selos.push(modulo.id);
-    }
-    if(!estado.modulosConcluidos.includes(modulo.id)){
-      estado.modulosConcluidos.push(modulo.id);
-    }
-    estado.tela = 'resultadoFase';
-    render();
-  }
-}
-
-function telaResultadoFase(){
-  const modulo = MODULOS[estado.moduloAtual];
-  const conquistou = estado.selos.includes(modulo.id);
-  const todosConcluidos = estado.modulosConcluidos.length === MODULOS.length;
-
-  return `
-    <div class="card" style="text-align:center;">
-      <div class="eyebrow">Fim do turno · ${modulo.local}</div>
-      <h2>Plantão de ${modulo.profissao} concluído</h2>
-      <div class="selo-grande">${conquistou ? modulo.icone : '🕓'}</div>
-      <p>${conquistou ? '<b>'+modulo.selo+'</b> conquistado! O paciente foi estabilizado com sucesso.' : 'O paciente segue em observação. Revise o assunto e tente de novo quando quiser.'}</p>
-      <div class="resultado-stats">
-        <div><div class="num">${estado.acertosModulo}/${modulo.perguntas.length}</div><div class="lbl">Acertos</div></div>
-        <div><div class="num">${estado.estabilidade}%</div><div class="lbl">Estabilidade final</div></div>
-      </div>
-      <div class="row" style="justify-content:center;">
-        <button class="ouro" onclick="baixarPDFModulo(${estado.moduloAtual})">Baixar PDF de treino: ${modulo.profissao}</button>
-        <button onclick="avancarDoResultado(${todosConcluidos})">${todosConcluidos ? 'Ver resultado final do plantão' : 'Voltar à escala'}</button>
-      </div>
-    </div>`;
-}
-
-function baixarPDFModulo(i){ gerarPDFModulo(MODULOS[i]); }
-
-function avancarDoResultado(todosConcluidos){
-  estado.estabilidade = 50;
-  estado.tela = todosConcluidos ? 'final' : 'mapa';
-  render();
-}
-
-function telaFinal(){
-  const selosHtml = MODULOS.map(m=>{
-    const tem = estado.selos.includes(m.id);
-    return `<div class="selo-item" style="${tem?'':'opacity:.35;'}"><div class="ic">${m.icone}</div><div class="nm">${m.profissao}</div></div>`;
-  }).join('');
-
-  return `
-    <div class="card" style="text-align:center;">
-      <div class="eyebrow">Plantão encerrado · 07h – 15h</div>
-      <h2>Fechamento do dia, ${estado.aluno.nome}</h2>
-      <p class="muted">Você passou por seis especialidades da saúde e tomou decisões reais de atendimento. Aqui está o resumo do seu plantão:</p>
-      <div class="resultado-stats">
-        <div><div class="num">${estado.score}</div><div class="lbl">Pontuação total</div></div>
-        <div><div class="num">${estado.selos.length}/${MODULOS.length}</div><div class="lbl">Selos conquistados</div></div>
-      </div>
-      <div class="selos-final">${selosHtml}</div>
-      <div class="row" style="justify-content:center;">
-        <button class="ouro" onclick="gerarPDFFinal()">Baixar caderno de treino completo</button>
-        <button class="secundario" onclick="recomecar()">Fazer outro plantão</button>
-      </div>
-    </div>`;
-}
-
-function recomecar(){
-  estado = {tela:'mapa', aluno:estado.aluno, moduloAtual:0, perguntaAtual:0, respondida:false, score:0, estabilidade:50, acertosModulo:0, selos:[], modulosConcluidos:[], ecgAlerta:''};
-  render();
-}
-
-render();
-</script>
 </body>
 </html>
