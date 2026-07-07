@@ -102,6 +102,10 @@
   button.ouro{background:var(--gold); color:#2A1B02;}
   button:disabled{opacity:.4; cursor:not-allowed; transform:none;}
   .row{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;}
+  .lgpd-aviso{margin-top:18px; padding:12px 14px; background:#FBFAF9; border:1px solid var(--border); border-radius:9px;}
+  .lgpd-check{display:flex; gap:10px; align-items:flex-start; cursor:pointer;}
+  .lgpd-check input[type=checkbox]{margin-top:2px; width:16px; height:16px; accent-color:var(--afya-red); flex-shrink:0; cursor:pointer;}
+  .lgpd-check span{font-size:12px; line-height:1.5; color:var(--muted);}
 
   /* ---------- POSTER (inspirado na peça Open Day) ---------- */
   .poster-hero{
@@ -207,6 +211,7 @@ function enviarLeadParaN8N(aluno){
       curso_interesse: aluno.curso,
       colegio: aluno.colegio,
       serie: aluno.serie,
+      consentimento_lgpd: aluno.consentimentoLgpd ? 'Sim' : 'Não',
       origem: 'Plantão: Vidas em Jogo',
       data_cadastro: new Date().toISOString()
     })
@@ -653,8 +658,10 @@ function telaCadastro(){
       <input type="text" id="colegio" placeholder="Nome do seu colégio">
       <label for="serie">Série</label>
       <select id="serie">
+        <option value="1º ano">1º ano do Ensino Médio</option>
         <option value="2º ano">2º ano do Ensino Médio</option>
         <option value="3º ano">3º ano do Ensino Médio</option>
+        <option value="Já concluí o Ensino Médio">Já concluí o Ensino Médio</option>
       </select>
       <label for="curso">Curso de interesse</label>
       <select id="curso">
@@ -666,6 +673,12 @@ function telaCadastro(){
         <option value="Psicologia">Psicologia</option>
         <option value="Ainda não sei">Ainda não sei</option>
       </select>
+      <div class="lgpd-aviso">
+        <label class="lgpd-check">
+          <input type="checkbox" id="consentimentoLgpd">
+          <span>Autorizo a AFYA a utilizar meus dados de contato (nome, telefone e e-mail) para fins de divulgação do seu processo seletivo, nos termos da Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).</span>
+        </label>
+      </div>
       <div class="row">
         <button onclick="iniciarPlantao()">Vestir o crachá e começar o plantão</button>
       </div>
@@ -679,6 +692,7 @@ function iniciarPlantao(){
   const colegio = document.getElementById('colegio').value.trim();
   const serie = document.getElementById('serie').value;
   const curso = document.getElementById('curso').value;
+  const consentimentoLgpd = document.getElementById('consentimentoLgpd').checked;
   if(!nome || !telefone || !email || !colegio){
     alert('Preencha nome, telefone, e-mail e colégio para gerar o crachá.');
     return;
@@ -687,7 +701,11 @@ function iniciarPlantao(){
     alert('Digite um e-mail válido.');
     return;
   }
-  estado.aluno = {nome, telefone, email, curso, colegio, serie};
+  if(!consentimentoLgpd){
+    alert('Para continuar, você precisa autorizar o uso dos seus dados conforme a LGPD, marcando a caixa de consentimento.');
+    return;
+  }
+  estado.aluno = {nome, telefone, email, curso, colegio, serie, consentimentoLgpd};
   enviarLeadParaN8N(estado.aluno);
   estado.tela = 'mapa';
   render();
