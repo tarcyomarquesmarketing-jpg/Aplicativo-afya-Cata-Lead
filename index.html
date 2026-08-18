@@ -655,7 +655,14 @@ function telaCadastro(){
       <label for="email">E-mail</label>
       <input type="text" id="email" placeholder="seu@email.com" inputmode="email">
       <label for="colegio">Colégio parceiro</label>
-      <input type="text" id="colegio" placeholder="Nome do seu colégio">
+      <select id="colegio" onchange="document.getElementById('colegioOutroWrap').style.display = this.value==='Outro' ? 'block' : 'none';">
+        <option value="">Selecione seu colégio</option>
+        <option value="Zuleide Constantino">Zuleide Constantino</option>
+        <option value="Outro">Outro (não está na lista)</option>
+      </select>
+      <div id="colegioOutroWrap" style="display:none;">
+        <input type="text" id="colegioOutro" placeholder="Digite o nome do seu colégio" style="margin-top:8px;">
+      </div>
       <label for="serie">Série</label>
       <select id="serie">
         <option value="1º ano">1º ano do Ensino Médio</option>
@@ -689,7 +696,10 @@ function iniciarPlantao(){
   const nome = document.getElementById('nome').value.trim();
   const telefone = document.getElementById('telefone').value.trim();
   const email = document.getElementById('email').value.trim();
-  const colegio = document.getElementById('colegio').value.trim();
+  const colegioSelect = document.getElementById('colegio').value;
+  const colegio = colegioSelect === 'Outro'
+    ? document.getElementById('colegioOutro').value.trim()
+    : colegioSelect;
   const serie = document.getElementById('serie').value;
   const curso = document.getElementById('curso').value;
   const consentimentoLgpd = document.getElementById('consentimentoLgpd').checked;
