@@ -753,7 +753,15 @@ function telaCadastro(){
       </div>
     </div>`;
 }
-
+function mascaraCPF(input) {
+        if (!input) return;
+        let v = input.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.substring(0, 11);
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        input.value = v;
+  }
 function iniciarPlantao(){
   const nome = document.getElementById('nome').value.trim();
   const cpf = document.getElementById('cpf').value.trim(); // <-- CAPTURA DO CPF
