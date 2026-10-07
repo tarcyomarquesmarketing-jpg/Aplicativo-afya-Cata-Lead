@@ -708,6 +708,9 @@ function telaCadastro(){
       <p class="muted">Preencha seus dados para gerar seu crachá e começar o turno.</p>
       <label for="nome">Seu nome</label>
       <input type="text" id="nome" placeholder="Como você quer ser chamado no crachá">
+      <!-- Campo CPF Adicionado -->
+      <label for="cpf">CPF</label>
+      <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
       <label for="telefone">Telefone (com DDD)</label>
       <input type="text" id="telefone" placeholder="(00) 00000-0000" inputmode="tel">
       <label for="email">E-mail</label>
