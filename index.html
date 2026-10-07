@@ -756,6 +756,7 @@ function telaCadastro(){
 
 function iniciarPlantao(){
   const nome = document.getElementById('nome').value.trim();
+  const cpf = document.getElementById('cpf').value.trim(); // <-- CAPTURA DO CPF
   const telefone = document.getElementById('telefone').value.trim();
   const email = document.getElementById('email').value.trim();
   const colegioSelect = document.getElementById('colegio').value;
@@ -765,14 +766,22 @@ function iniciarPlantao(){
   const serie = document.getElementById('serie').value;
   const curso = document.getElementById('curso').value;
   const consentimentoLgpd = document.getElementById('consentimentoLgpd').checked;
-  if(!nome || !telefone || !email || !colegio){
-    alert('Preencha nome, telefone, e-mail e colégio para gerar o crachá.');
+
+  if(!nome || !cpf || !telefone || !email || !colegio){
+    alert('Preencha nome, CPF, telefone, e-mail e colégio para gerar o crachá.');
     return;
   }
+
+  if(cpf.length < 14){
+    alert('Digite um CPF válido no formato 000.000.000-00.');
+    return;
+  }
+
   if(!email.includes('@') || !email.includes('.')){
     alert('Digite um e-mail válido.');
     return;
   }
+
   if(!consentimentoLgpd){
     alert('Para continuar, você precisa autorizar o uso dos seus dados conforme a LGPD, marcando a caixa de consentimento.');
     return;
